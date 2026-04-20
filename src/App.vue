@@ -44,15 +44,15 @@
                       class="pb-2 font-bold uppercase text-xs tracking-widest transition-all whitespace-nowrap">
                 Athlete Roster
               </button>
-              <button @click="activeTab = 'staff'" 
-                      :class="activeTab === 'staff' ? 'text-chantilly border-b-2 border-chantilly' : 'text-gray-400'" 
-                      class="pb-2 font-bold uppercase text-xs tracking-widest transition-all whitespace-nowrap">
-                Staff Management
-              </button>
               <button @click="activeTab = 'meets'" 
                       :class="activeTab === 'meets' ? 'text-chantilly border-b-2 border-chantilly' : 'text-gray-400'" 
                       class="pb-2 font-bold uppercase text-xs tracking-widest transition-all whitespace-nowrap">
                 Meet Management
+              </button>
+              <button @click="activeTab = 'staff'" 
+                      :class="activeTab === 'staff' ? 'text-chantilly border-b-2 border-chantilly' : 'text-gray-400'" 
+                      class="pb-2 font-bold uppercase text-xs tracking-widest transition-all whitespace-nowrap">
+                Staff Management
               </button>
             </div>
 
