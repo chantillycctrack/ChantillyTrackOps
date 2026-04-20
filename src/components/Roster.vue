@@ -21,19 +21,21 @@
           <tr v-for="athlete in athletes" :key="athlete.id" class="hover:bg-gray-50 dark:hover:bg-white/5 transition">
             <td class="p-4">
               <div class="font-bold text-gray-900 dark:text-white">{{ athlete.firstName }} {{ athlete.lastName }}</div>
-              <div class="text-xs text-gray-500">{{ athlete.isActive ? 'Active' : 'Inactive' }}</div>
+              <div class="text-[10px] uppercase tracking-wider text-gray-500">
+                {{ athlete.isActive ? '● Active' : '○ Inactive' }}
+              </div>
             </td>
             <td class="p-4 text-sm">
               <div class="text-gray-700 dark:text-gray-300">{{ athlete.currentGrade }}</div>
               <div class="text-chantilly font-medium text-xs">{{ athlete.group }}</div>
             </td>
-            <td class="p-4 text-[11px] text-gray-500">
+            <td class="p-4 text-[11px] text-gray-500 leading-tight">
               <div>A: {{ athlete.email }}</div>
               <div class="italic">P: {{ athlete.parentEmail }}</div>
             </td>
             <td class="p-4 text-right">
               <div class="flex justify-end gap-2">
-                <button @click="toggleStatus(athlete)" class="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition" title="Toggle Active">
+                <button @click="toggleStatus(athlete)" class="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition" title="Archive/Unarchive">
                   {{ athlete.isActive ? '📂' : '📤' }}
                 </button>
                 <button @click="deleteAthlete(athlete)" class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 rounded-lg transition" title="Delete Permanently">
@@ -68,7 +70,7 @@ const toggleStatus = async (athlete) => {
 }
 
 const deleteAthlete = async (athlete) => {
-  const confirmed = confirm(`Are you sure you want to permanently delete ${athlete.firstName} ${athlete.lastName}?`)
+  const confirmed = confirm(`PERMANENTLY DELETE ${athlete.firstName} ${athlete.lastName}?\n\nThis cannot be undone. Usually, you should use the Archive (Folder) button instead.`)
   if (confirmed) {
     await deleteDoc(doc(db, "athletes", athlete.id))
   }
