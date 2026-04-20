@@ -20,10 +20,9 @@
 
       <select v-model="form.group" class="input-field" required>
         <option value="">Primary Event Group</option>
-        <option value="Sprinters">Sprints/Hurdles</option>
-        <option value="Distance">Distance</option>
-        <option value="Throwers">Throws</option>
-        <option value="Jumpers">Jumps</option>
+        <option value="Sprinters">Sprints (55m - 500m)</option>
+        <option value="Distance">Distance (800m - 5k)</option>
+        <option value="Throwers">Throws (Shotput / Discuss)</option>
       </select>
 
       <input v-model="form.email" type="email" placeholder="Athlete Email" class="input-field" required />
@@ -57,10 +56,23 @@ const gradYears = computed(() => {
 const handleSubmit = async () => {
   loading.value = true
   try {
-    const academicYear = new Date().getMonth() > 5 ? new Date().getFullYear() + 1 : new Date().getFullYear()
-    const diff = form.value.gradYear - academicYear
-    const gradeLabels = ["Senior", "Junior", "Sophomore", "Freshman"]
-    const grade = gradeLabels[diff] || "Alumni/Other"
+    const now = new Date()
+    const currentYear = now.getFullYear()
+    const currentMonth = now.getMonth() // 0 = Jan, 3 = April, etc.
+
+    // If we are in Jan-June, the "School Year" is the current year.
+    // If we are in July-Dec, the "School Year" (for seniors) is next year.
+    const schoolYearEnd = currentMonth > 5 ? currentYear + 1 : currentYear
+
+    const diff = form.value.gradYear - schoolYearEnd
+
+    let grade = ""
+    if (diff === 0) grade = "Senior"
+    else if (diff === 1) grade = "Junior"
+    else if (diff === 2) grade = "Sophomore"
+    else if (diff === 3) grade = "Freshman"
+    else if (diff < 0) grade = "Alumni"
+    else grade = "Future Charger"
 
     await addDoc(collection(db, "athletes"), {
       ...form.value,
@@ -69,7 +81,7 @@ const handleSubmit = async () => {
     })
     
     success.value = true
-    form.value = { firstName: '', lastName: '', gradYear: '', group: '', email: '', isActive: true }
+    form.value = { firstName: '', lastName: '', gradYear: '', group: '', email: '', parentEmail: '', isActive: true }
     setTimeout(() => { success.value = false }, 5000)
   } catch (e) {
     alert("Error saving: " + e.message)
