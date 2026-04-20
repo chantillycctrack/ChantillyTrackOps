@@ -1,63 +1,66 @@
 <template>
-  <div :class="{ 'dark': darkMode }" class="min-h-screen bg-gray-50 dark:bg-[#0F172A] text-gray-900 dark:text-gray-100 font-sans transition-colors duration-300">
+  <div :class="{ 'dark': darkMode }">
     
-    <header class="bg-white dark:bg-black border-b border-gray-200 dark:border-[#4B2E83]/30 px-6 py-4 flex justify-between items-center shadow-sm">
-      <h1 class="text-xl font-black tracking-tight uppercase">
-        Chantilly <span class="text-[#4B2E83]">Track Ops</span>
-      </h1>
+    <div class="min-h-screen bg-gray-50 dark:bg-[#0F172A] text-gray-900 dark:text-gray-100 font-sans transition-colors duration-300">
       
-      <div class="flex items-center gap-6">
-        <button v-if="!user" @click="login" class="text-xs font-bold uppercase text-gray-400 hover:text-[#4B2E83] transition">
-          Coach Login
-        </button>
+      <header class="bg-white dark:bg-black border-b border-gray-200 dark:border-[#4B2E83]/30 px-6 py-4 flex justify-between items-center shadow-sm">
+        <h1 class="text-xl font-black tracking-tight uppercase">
+          Chantilly <span class="text-[#4B2E83]">Track Ops</span>
+        </h1>
         
-        <template v-else-if="isAuthorizedCoach">
-          <div class="flex items-center gap-4 border-r border-gray-200 dark:border-gray-700 pr-4 mr-2">
-            <button @click="isAdmin = !isAdmin" class="text-xs font-bold uppercase text-chantilly">
-              {{ isAdmin ? '← Athlete Form' : 'View Roster' }}
-            </button>
-          </div>
-          <button @click="logout" class="text-[10px] uppercase text-gray-500 hover:text-red-500">
-            Logout
+        <div class="flex items-center gap-6">
+          <button v-if="!user" @click="login" class="text-xs font-bold uppercase text-gray-400 hover:text-[#4B2E83] transition">
+            Coach Login
           </button>
-        </template>
-
-        <div v-else class="flex items-center gap-3">
-          <span class="text-[10px] text-red-400 uppercase font-bold italic">Not Staff</span>
-          <button @click="logout" class="text-[10px] underline text-gray-500 uppercase">Logout</button>
-        </div>
-
-        <button @click="darkMode = !darkMode" class="hover:opacity-70 transition">
-          {{ darkMode ? '☀️' : '🌙' }}
-        </button>
-      </div>
-    </header>
-
-    <main class="container mx-auto px-4 py-12 flex justify-center">
-      <div class="w-full max-w-4xl">
-        
-        <template v-if="isAdmin && isAuthorizedCoach">
-          <div class="flex gap-6 mb-8 border-b border-gray-200 dark:border-gray-800">
-            <button @click="activeTab = 'roster'" 
-                    :class="activeTab === 'roster' ? 'text-chantilly border-b-2 border-chantilly' : 'text-gray-400'" 
-                    class="pb-2 font-bold uppercase text-xs tracking-widest transition-all">
-              Athlete Roster
+          
+          <template v-else-if="isAuthorizedCoach">
+            <div class="flex items-center gap-4 border-r border-gray-200 dark:border-gray-700 pr-4 mr-2">
+              <button @click="isAdmin = !isAdmin" class="text-xs font-bold uppercase text-chantilly">
+                {{ isAdmin ? '← Athlete Form' : 'View Roster' }}
+              </button>
+            </div>
+            <button @click="logout" class="text-[10px] uppercase text-gray-500 hover:text-red-500">
+              Logout
             </button>
-            <button @click="activeTab = 'staff'" 
-                    :class="activeTab === 'staff' ? 'text-chantilly border-b-2 border-chantilly' : 'text-gray-400'" 
-                    class="pb-2 font-bold uppercase text-xs tracking-widest transition-all">
-              Staff Management
-            </button>
+          </template>
+
+          <div v-else class="flex items-center gap-3">
+            <span class="text-[10px] text-red-400 uppercase font-bold italic">Not Staff</span>
+            <button @click="logout" class="text-[10px] underline text-gray-500 uppercase">Logout</button>
           </div>
 
-          <Roster v-if="activeTab === 'roster'" />
-          <StaffManager v-if="activeTab === 'staff'" />
-        </template>
+          <button @click="darkMode = !darkMode" class="hover:opacity-70 transition p-2 rounded-lg">
+            {{ darkMode ? '☀️' : '🌙' }}
+          </button>
+        </div>
+      </header>
 
-        <SignupForm v-else />
-        
-      </div>
-    </main>
+      <main class="container mx-auto px-4 py-12 flex justify-center">
+        <div class="w-full max-w-4xl">
+          
+          <template v-if="isAdmin && isAuthorizedCoach">
+            <div class="flex gap-6 mb-8 border-b border-gray-200 dark:border-gray-800">
+              <button @click="activeTab = 'roster'" 
+                      :class="activeTab === 'roster' ? 'text-chantilly border-b-2 border-chantilly' : 'text-gray-400'" 
+                      class="pb-2 font-bold uppercase text-xs tracking-widest transition-all">
+                Athlete Roster
+              </button>
+              <button @click="activeTab = 'staff'" 
+                      :class="activeTab === 'staff' ? 'text-chantilly border-b-2 border-chantilly' : 'text-gray-400'" 
+                      class="pb-2 font-bold uppercase text-xs tracking-widest transition-all">
+                Staff Management
+              </button>
+            </div>
+
+            <Roster v-if="activeTab === 'roster'" />
+            <StaffManager v-if="activeTab === 'staff'" />
+          </template>
+
+          <SignupForm v-else />
+          
+        </div>
+      </main>
+    </div>
   </div>
 </template>
 
