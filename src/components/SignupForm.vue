@@ -4,7 +4,7 @@
       <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white uppercase tracking-tight">
         Athlete <span class="text-chantilly">Registration</span>
       </h2>
-      <p class="text-gray-500 dark:text-gray-400 mt-2">Chantilly Track & Field Operations</p>
+      <p class="text-gray-500 dark:text-gray-400 mt-2">Join Chantilly Track & Field</p>
     </div>
 
     <form @submit.prevent="handleSubmit" class="space-y-5">
@@ -35,13 +35,13 @@
       <hr class="border-gray-100 dark:border-gray-800 my-6" />
 
       <div class="space-y-4">
-        <label class="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">Guardian 1 (Optional)</label>
+        <label class="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">Parent / Guardian 1 (Optional)</label>
         <input v-model="form.parentName1" type="text" placeholder="Guardian 1 Name" class="input-field" />
         <input v-model="form.parentEmail1" type="email" placeholder="Guardian 1 Email" class="input-field" />
       </div>
 
       <div class="space-y-4 pt-2">
-        <label class="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">Guardian 2 (Optional)</label>
+        <label class="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">Parent / Guardian 2 (Optional)</label>
         <input v-model="form.parentName2" type="text" placeholder="Guardian 2 Name" class="input-field" />
         <input v-model="form.parentEmail2" type="email" placeholder="Guardian 2 Email" class="input-field" />
       </div>
