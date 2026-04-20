@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
     <div v-if="selectedMeet" class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-      <button @click="selectedMeet = null" class="text-chantilly font-bold text-xs uppercase flex items-center gap-2 hover:opacity-70 transition">
+      <button @click="closeLineup" class="text-chantilly font-bold text-xs uppercase flex items-center gap-2 hover:opacity-70 transition">
         <span>←</span> Back to Schedule
       </button>
 
@@ -43,7 +43,7 @@
             <tr v-for="meet in meets" :key="meet.id" class="hover:bg-gray-50 dark:hover:bg-white/5 transition group">
               <td class="p-4 text-[10px] font-bold text-chantilly uppercase">{{ meet.season }}</td>
               <td class="p-4 font-mono text-sm">{{ meet.date }}</td>
-              <td class="p-4"><button @click="loadLineup(meet)" class="font-bold hover:text-chantilly transition">{{ meet.name }}</button></td>
+              <td class="p-4"><button @click="loadLineup(meet)" class="font-bold hover:text-chantilly transition text-left">{{ meet.name }}</button></td>
               <td class="p-4 text-right"><button @click="deleteMeet(meet)" class="text-red-500 p-2">🗑️</button></td>
             </tr>
           </tbody>
@@ -127,8 +127,8 @@
                        :disabled="!isAthleteInEvent(athlete.id, event) && isBlocked(athlete, event)"
                        @change="toggleEntry(athlete, event)"
                        :title="getBlockReason(athlete, event)"
-                       class="w-4 h-4 rounded border-gray-300 text-chantilly focus:ring-chantilly disabled:opacity-10 disabled:cursor-not-allowed">
-                <span v-else-if="isAthleteInEvent(athlete.id, event)" class="text-[9px] text-chantilly font-black">RELAY</span>
+                       class="w-4 h-4 rounded border-gray-300 text-chantilly focus:ring-chantilly disabled:opacity-10 disabled:cursor-not-allowed cursor-pointer">
+                <span v-else-if="isAthleteInEvent(athlete.id, event)" class="text-[9px] text-chantilly font-black uppercase">Relay</span>
               </td>
             </tr>
           </tbody>
@@ -141,7 +141,7 @@
         <div class="p-6 bg-gray-50 dark:bg-black/20 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
           <div>
             <h3 class="font-black uppercase text-xs tracking-widest text-chantilly">Add to {{ activeEvent }}</h3>
-            <p class="text-[10px] text-gray-400 uppercase">Filtered by Group: {{ filterGroup }}</p>
+            <p class="text-[10px] text-gray-400 uppercase">Group: {{ filterGroup }} | Tab: {{ activeGender }}</p>
           </div>
           <button @click="showSelector = false" class="text-gray-400 hover:text-gray-600 font-bold">✕</button>
         </div>
@@ -155,7 +155,7 @@
               <div class="text-[9px] font-black text-gray-400 uppercase">R: {{ getRunningCount(athlete.id) }} | F: {{ getFieldCount(athlete.id) }}</div>
             </div>
             <div v-if="isBlocked(athlete, activeEvent)" class="text-[8px] font-black text-red-500 uppercase">{{ getBlockReason(athlete, activeEvent) }}</div>
-            <div v-else class="text-[10px] font-black text-chantilly opacity-0 group-hover:opacity-100">SELECT +</div>
+            <div v-else class="text-[10px] font-black text-chantilly opacity-0 group-hover:opacity-100 text-right">SELECT +</div>
           </div>
         </div>
       </div>
@@ -173,6 +173,7 @@ const meets = ref([])
 const athletes = ref([])
 const entries = ref([])
 const selectedMeet = ref(null)
+let unsubscribeEntries = null
 
 // UI STATE
 const viewMode = ref('event')
@@ -192,7 +193,7 @@ const templates = {
 const getEventType = (name) => ["Shot Put", "Discus", "Long Jump", "Triple Jump", "High Jump", "Pole Vault"].includes(name) ? 'field' : 'running'
 const getEventsForSeason = (season) => templates[season] || []
 const getEntriesForEvent = (ev) => entries.value.filter(e => e.event === ev && e.gender === activeGender.value)
-const isAthleteInEvent = (id, ev) => entries.value.some(e => e.athleteId === id && e.event === ev)
+const isAthleteInEvent = (id, ev) => entries.value.some(e => e.athleteId === id && e.event === ev && e.gender === activeGender.value)
 const getRunningCount = (id) => entries.value.filter(e => e.athleteId === id && getEventType(e.event) === 'running').length
 const getFieldCount = (id) => entries.value.filter(e => e.athleteId === id && getEventType(e.event) === 'field').length
 
@@ -223,25 +224,45 @@ onMounted(() => {
 
 const loadLineup = (meet) => {
   selectedMeet.value = meet
-  onSnapshot(collection(db, `meets/${meet.id}/entries`), (snap) => {
+  if (unsubscribeEntries) unsubscribeEntries()
+  const entriesRef = collection(db, `meets/${meet.id}/entries`)
+  unsubscribeEntries = onSnapshot(entriesRef, (snap) => {
     entries.value = snap.docs.map(d => ({ id: d.id, ...d.data() }))
   })
+}
+
+const closeLineup = () => {
+  if (unsubscribeEntries) unsubscribeEntries()
+  selectedMeet.value = null
+  entries.value = []
 }
 
 const openSelector = (ev) => { activeEvent.value = ev; showSelector.value = true }
 
 const addEntry = async (athlete) => {
-  await addDoc(collection(db, `meets/${selectedMeet.value.id}/entries`), {
-    athleteId: athlete.id, athleteName: `${athlete.firstName} ${athlete.lastName}`,
-    event: activeEvent.value, gender: activeGender.value
-  })
-  showSelector.value = false
+  try {
+    await addDoc(collection(db, `meets/${selectedMeet.value.id}/entries`), {
+      athleteId: athlete.id, 
+      athleteName: `${athlete.firstName} ${athlete.lastName}`,
+      event: activeEvent.value, 
+      gender: activeGender.value,
+      timestamp: new Date()
+    })
+    showSelector.value = false
+  } catch (e) { console.error(e) }
 }
 
 const toggleEntry = async (athlete, event) => {
-  const existing = entries.value.find(e => e.athleteId === athlete.id && e.event === event)
-  if (existing) await deleteDoc(doc(db, `meets/${selectedMeet.value.id}/entries`, existing.id))
-  else await addEntry(athlete)
+  const existing = entries.value.find(e => 
+    e.athleteId === athlete.id && 
+    e.event === event && 
+    e.gender === activeGender.value
+  )
+  if (existing) {
+    await deleteDoc(doc(db, `meets/${selectedMeet.value.id}/entries`, existing.id))
+  } else {
+    await addEntry(athlete)
+  }
 }
 
 const removeEntry = async (id) => await deleteDoc(doc(db, `meets/${selectedMeet.value.id}/entries`, id))
