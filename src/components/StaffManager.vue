@@ -2,7 +2,7 @@
   <div class="bg-white dark:bg-gray-900 rounded-xl shadow-xl overflow-hidden border border-gray-200 dark:border-chantilly/20 mt-8">
     <div class="p-6 border-b border-gray-100 dark:border-gray-800">
       <h3 class="text-xl font-bold text-gray-900 dark:text-white">Staff Management</h3>
-      <p class="text-xs text-gray-500 mt-1">Authorized emails can access the Roster and delete athletes.</p>
+      <p class="text-xs text-gray-500 mt-1">Authorized emails can access team management functionality.</p>
     </div>
 
     <div class="p-6">
