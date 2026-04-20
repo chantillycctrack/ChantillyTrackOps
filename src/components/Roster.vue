@@ -1,10 +1,18 @@
 <template>
   <div class="bg-white dark:bg-gray-900 rounded-xl shadow-xl overflow-hidden border border-gray-200 dark:border-chantilly/20">
     <div class="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-      <h3 class="text-xl font-bold text-gray-900 dark:text-white">Active Roster</h3>
-      <span class="bg-chantilly/10 text-chantilly text-xs font-bold px-3 py-1 rounded-full">
-        {{ athletes.length }} Athletes
-      </span>
+      <div>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white">
+          {{ showArchived ? 'Full Database' : 'Current Roster' }}
+        </h3>
+        <p class="text-xs text-gray-500">{{ filteredAthletes.length }} Athletes Shown</p>
+      </div>
+      
+      <button @click="showArchived = !showArchived" 
+              class="text-[10px] uppercase tracking-widest font-bold px-3 py-2 rounded-lg border transition shadow-sm"
+              :class="showArchived ? 'bg-chantilly text-white border-chantilly' : 'text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5'">
+        {{ showArchived ? 'Hide Archived' : 'Show Archived' }}
+      </button>
     </div>
 
     <div class="overflow-x-auto">
@@ -18,21 +26,27 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-          <tr v-for="athlete in athletes" :key="athlete.id" class="hover:bg-gray-50 dark:hover:bg-white/5 transition border-l-4" :class="athlete.isActive ? 'border-l-green-500' : 'border-l-gray-300'">
+          <tr v-for="athlete in filteredAthletes" :key="athlete.id" 
+              class="hover:bg-gray-50 dark:hover:bg-white/5 transition border-l-4" 
+              :class="athlete.isActive ? 'border-l-green-500' : 'border-l-gray-500 opacity-60'">
+            
             <td class="p-4">
               <div class="font-bold text-gray-900 dark:text-white">{{ athlete.firstName }} {{ athlete.lastName }}</div>
               <div class="text-[10px] uppercase tracking-wider text-gray-500 font-bold">
                 {{ athlete.isActive ? 'Active' : 'Archived' }}
               </div>
             </td>
+
             <td class="p-4 text-sm">
               <div class="text-gray-700 dark:text-gray-300">{{ athlete.currentGrade }}</div>
-              <div class="text-chantilly font-medium text-xs">{{ athlete.group }}</div>
+              <div class="text-chantilly font-medium text-xs uppercase">{{ athlete.group }}</div>
             </td>
+
             <td class="p-4 text-[11px] text-gray-500 leading-tight">
               <div>Athlete: {{ athlete.email }}</div>
               <div class="italic mt-1 text-gray-400">Parent: {{ athlete.parentEmail }}</div>
             </td>
+
             <td class="p-4 text-right">
               <div class="flex justify-end gap-2">
                 <button @click="toggleStatus(athlete)" 
@@ -51,19 +65,31 @@
           </tr>
         </tbody>
       </table>
+
+      <div v-if="filteredAthletes.length === 0" class="p-12 text-center text-gray-500 text-sm italic">
+        No athletes found in this view.
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { db } from '../firebaseConfig'
 import { collection, query, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore'
 
 const athletes = ref([])
+const showArchived = ref(false)
+
+// Filter logic: Only show isActive:true unless showArchived is toggled
+const filteredAthletes = computed(() => {
+  if (showArchived.value) {
+    return athletes.value 
+  }
+  return athletes.value.filter(a => a.isActive === true)
+})
 
 onMounted(() => {
-  // Real-time listener for the athletes collection
   const q = query(collection(db, "athletes"))
   onSnapshot(q, (snapshot) => {
     athletes.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
@@ -80,16 +106,12 @@ const toggleStatus = async (athlete) => {
 }
 
 const deleteAthlete = async (athlete) => {
-  // Protective Confirmation Dialog
-  const msg = `PERMANENTLY DELETE ${athlete.firstName} ${athlete.lastName}?\n\nThis will remove all their contact info and registration data from the cloud. This cannot be undone.`
-  
+  const msg = `PERMANENTLY DELETE ${athlete.firstName} ${athlete.lastName}?\n\nThis cannot be undone.`
   if (confirm(msg)) {
     try {
-      const athleteRef = doc(db, "athletes", athlete.id)
-      await deleteDoc(athleteRef)
+      await deleteDoc(doc(db, "athletes", athlete.id))
     } catch (e) {
-      alert("Permission Denied: Only authorized coaches can delete entries.")
-      console.error("Delete failed:", e)
+      alert("Error: " + e.message)
     }
   }
 }
