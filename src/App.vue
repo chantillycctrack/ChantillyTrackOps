@@ -79,7 +79,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore'
 import SignupForm from './components/SignupForm.vue'
 import Roster from './components/Roster.vue'
 import StaffManager from './components/StaffManager.vue'
-import MeetManager from '.components/MeetManager.vue'
+import MeetManager from './components/MeetManager.vue'
 
 // State
 const darkMode = ref(true)
