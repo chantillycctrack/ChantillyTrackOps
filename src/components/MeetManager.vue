@@ -185,7 +185,7 @@ const newMeet = ref({ name: '', date: '', season: 'Winter' })
 
 const templates = {
   Winter: ["4x800m Relay", "55m Dash", "55m Hurdles", "1600m Run", "4x200m Relay", "500m Dash", "1000m Run", "300m Dash", "3200m Run", "4x400m Relay", "Shot Put", "Long Jump", "Triple Jump", "High Jump", "Pole Vault"],
-  Spring: ["4x800m Relay", "100m Dash", "100 / 110m Hurdles", "1600m Run", "4x100m Relay", "400m Dash", "800m Run", "200m Dash", "3200m Run", "4x400m Relay", "Shot Put", "Discus", "Long Jump", "Triple Jump", "High Jump", "Pole Vault"]
+  Spring: ["4x800m Relay", "100m Dash", "100 / 110m Hurdles", "1600m Run", "4x100m Relay", "400m Dash", "300m Hurdles", "800m Run", "200m Dash", "3200m Run", "4x400m Relay", "Shot Put", "Discus", "Long Jump", "Triple Jump", "High Jump", "Pole Vault"]
 }
 
 // HELPERS
