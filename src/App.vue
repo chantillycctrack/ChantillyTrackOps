@@ -84,10 +84,14 @@ onMounted(() => {
   onAuthStateChanged(auth, async (currentUser) => {
     user.value = currentUser
     if (currentUser) {
-      // Check if logged-in email exists in authorized_coaches collection
       const q = query(collection(db, "authorized_coaches"), where("email", "==", currentUser.email))
       const querySnapshot = await getDocs(q)
       isAuthorizedCoach.value = !querySnapshot.empty
+      
+      // AUTO-REDIRECT: If they are a coach, skip the signup form
+      if (isAuthorizedCoach.value) {
+        isAdmin.value = true
+      }
     } else {
       isAuthorizedCoach.value = false
       isAdmin.value = false
