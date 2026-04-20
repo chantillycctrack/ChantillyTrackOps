@@ -21,7 +21,7 @@
           <tr>
             <th class="p-4">Name</th>
             <th class="p-4">Grade / Group</th>
-            <th class="p-4">Contact</th>
+            <th class="p-4">Contact Info</th>
             <th class="p-4 text-right">Actions</th>
           </tr>
         </thead>
@@ -38,13 +38,27 @@
             </td>
 
             <td class="p-4 text-sm">
-              <div class="text-gray-700 dark:text-gray-300">{{ athlete.currentGrade }}</div>
-              <div class="text-chantilly font-medium text-xs uppercase">{{ athlete.group }}</div>
+              <div class="text-gray-700 dark:text-gray-300 font-medium">{{ athlete.currentGrade }}</div>
+              <div class="text-chantilly font-bold text-[10px] uppercase tracking-wider">{{ athlete.group }}</div>
             </td>
 
-            <td class="p-4 text-[11px] text-gray-500 leading-tight">
-              <div>Athlete: {{ athlete.email }}</div>
-              <div class="italic mt-1 text-gray-400">Parent: {{ athlete.parentEmail }}</div>
+            <td class="p-4 text-[11px] leading-tight space-y-2">
+              <div class="flex flex-col">
+                <span class="text-gray-400 uppercase font-black text-[9px] tracking-tighter">Athlete</span>
+                <span class="text-gray-700 dark:text-gray-300">{{ athlete.email }}</span>
+              </div>
+              
+              <div v-if="athlete.parentName1 || athlete.parentEmail1" class="flex flex-col border-t border-gray-100 dark:border-gray-800 pt-1">
+                <span class="text-gray-400 uppercase font-black text-[9px] tracking-tighter">Guardian 1</span>
+                <span class="text-gray-800 dark:text-gray-200 font-medium">{{ athlete.parentName1 || 'No Name Provided' }}</span>
+                <span class="text-gray-500 italic">{{ athlete.parentEmail1 || 'No Email' }}</span>
+              </div>
+
+              <div v-if="athlete.parentName2 || athlete.parentEmail2" class="flex flex-col border-t border-gray-100 dark:border-gray-800 pt-1">
+                <span class="text-gray-400 uppercase font-black text-[9px] tracking-tighter">Guardian 2</span>
+                <span class="text-gray-800 dark:text-gray-200 font-medium">{{ athlete.parentName2 || 'No Name Provided' }}</span>
+                <span class="text-gray-500 italic">{{ athlete.parentEmail2 || 'No Email' }}</span>
+              </div>
             </td>
 
             <td class="p-4 text-right">
@@ -54,7 +68,6 @@
                         :title="athlete.isActive ? 'Archive Athlete' : 'Restore Athlete'">
                   {{ athlete.isActive ? '📂' : '📤' }}
                 </button>
-                
                 <button @click="deleteAthlete(athlete)" 
                         class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 rounded-lg transition" 
                         title="Delete Permanently">
@@ -81,7 +94,6 @@ import { collection, query, onSnapshot, doc, updateDoc, deleteDoc } from 'fireba
 const athletes = ref([])
 const showArchived = ref(false)
 
-// Filter logic: Only show isActive:true unless showArchived is toggled
 const filteredAthletes = computed(() => {
   if (showArchived.value) {
     return athletes.value 
