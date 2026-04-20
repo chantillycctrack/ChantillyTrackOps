@@ -1,25 +1,28 @@
 <template>
-  <div :class="darkMode ? 'dark' : 'light'" class="min-h-screen bg-gray-50 dark:bg-darkBg transition-colors duration-300">
-    <header class="bg-white dark:bg-black border-b border-gray-200 dark:border-chantilly/30 p-4 flex justify-between items-center shadow-lg">
-      <h1 class="text-xl font-black tracking-tighter dark:text-white text-gray-900 uppercase">
-        Chantilly <span class="text-chantilly font-normal">Track Ops</span>
+  <div :class="{ 'dark': darkMode }" class="min-h-screen bg-gray-50 dark:bg-[#0F172A] text-gray-900 dark:text-gray-100 font-sans">
+    
+    <header class="bg-white dark:bg-black border-b border-gray-200 dark:border-[#4B2E83]/30 px-6 py-4 flex justify-between items-center shadow-sm">
+      <h1 class="text-xl font-black tracking-tight uppercase">
+        Chantilly <span class="text-[#4B2E83]">Track Ops</span>
       </h1>
       
-      <div class="flex gap-3">
-        <button @click="isAdmin = !isAdmin" class="text-[10px] uppercase tracking-widest text-gray-500 hover:text-chantilly">
-          {{ isAdmin ? 'Close Admin' : 'Coach Entry' }}
+      <div class="flex items-center gap-6">
+        <button @click="isAdmin = !isAdmin" class="text-xs font-bold tracking-widest uppercase text-gray-400 hover:text-[#4B2E83] transition">
+          {{ isAdmin ? '← Back to Form' : 'Coach Login' }}
         </button>
-        <button @click="darkMode = !darkMode" class="text-lg">
+        <button @click="darkMode = !darkMode" class="hover:opacity-70 transition">
           {{ darkMode ? '☀️' : '🌙' }}
         </button>
       </div>
     </header>
 
-    <main class="max-w-5xl mx-auto p-6 pt-12">
-      <Roster v-if="isAdmin" />
-      
-      <SignupForm v-else />
+    <main class="container mx-auto px-4 py-12 flex justify-center">
+      <div class="w-full max-w-xl">
+        <Roster v-if="isAdmin" />
+        <SignupForm v-else />
+      </div>
     </main>
+    
   </div>
 </template>
 
