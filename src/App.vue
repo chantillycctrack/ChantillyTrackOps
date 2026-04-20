@@ -59,6 +59,7 @@
 
             <Roster v-if="activeTab === 'roster'" />
             <StaffManager v-if="activeTab === 'staff'" />
+            <MeetManager v-if="activeTab === 'meets'" />
           </template>
 
           <SignupForm v-else />
