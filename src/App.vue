@@ -50,6 +50,11 @@
                       class="pb-2 font-bold uppercase text-xs tracking-widest transition-all">
                 Staff Management
               </button>
+              <button @click="activeTab = 'meets'" 
+                      :class="activeTab === 'meets' ? 'text-chantilly border-b-2 border-chantilly' : 'text-gray-400'" 
+                      class="pb-2 font-bold uppercase text-xs tracking-widest transition-all">
+                Meet Management
+              </button>
             </div>
 
             <Roster v-if="activeTab === 'roster'" />
@@ -74,6 +79,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore'
 import SignupForm from './components/SignupForm.vue'
 import Roster from './components/Roster.vue'
 import StaffManager from './components/StaffManager.vue'
+import MeetManager from '.components/MeetManager.vue'
 
 // State
 const darkMode = ref(true)
