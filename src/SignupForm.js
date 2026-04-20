@@ -29,14 +29,14 @@ const SignupForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // We save the Grad Year and the calculated Grade for record-keeping
       const dataToSave = {
         ...formData,
         currentGrade: getGrade(formData.gradYear),
-        timestamp: new Date()
+        timestamp: new Date(),
+        isActive: true // New athletes start as active
       };
-      await addDoc(collection(db, "signups"), dataToSave);
-      alert("Success! You have joined the Chargers roster.");
+      await addDoc(collection(db, "athletes"), dataToSave); // Changed collection to "athletes" for permanent storage
+      alert("Success!");
     } catch (error) {
       alert("Submission failed.");
     }
