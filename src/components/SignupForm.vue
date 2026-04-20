@@ -18,7 +18,9 @@
         <div class="grid grid-cols-2 gap-4">
           <select v-model="form.gradYear" class="input-field" required>
             <option value="">Grad Year *</option>
-            <option v-for="year in gradYears" :key="year" :value="year">{{ year }}</option>
+            <option v-for="item in availableYears" :key="item.year" :value="item.year">
+              {{ item.year }} ({{ item.label }})
+            </option>
           </select>
 
           <select v-model="form.group" class="input-field" required>
@@ -79,28 +81,39 @@ const form = ref({
 const loading = ref(false)
 const success = ref(false)
 
-const gradYears = computed(() => {
-  const current = new Date().getFullYear()
-  return [current, current + 1, current + 2, current + 3, current + 4]
+// Determine the current "Senior" class year based on July 1st cutoff
+const currentSeniorYear = computed(() => {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() // 0-11
+  // If July (6) or later, the current year's class has graduated
+  return month >= 6 ? year + 1 : year
+})
+
+// Generate exactly 4 years (Sr, Jr, So, Fr)
+const availableYears = computed(() => {
+  const senior = currentSeniorYear.value
+  return [
+    { year: senior, label: 'Senior' },
+    { year: senior + 1, label: 'Junior' },
+    { year: senior + 2, label: 'Sophomore' },
+    { year: senior + 3, label: 'Freshman' }
+  ]
 })
 
 const handleSubmit = async () => {
   loading.value = true
   try {
-    // Corrected Grade Logic
-    const now = new Date()
-    const currentYear = now.getFullYear()
-    const currentMonth = now.getMonth() 
-    const schoolYearEnd = currentMonth > 5 ? currentYear + 1 : currentYear
-    const diff = form.value.gradYear - schoolYearEnd
+    // Grade calculation based on the dynamic senior year
+    const seniorYear = currentSeniorYear.value
+    const diff = form.value.gradYear - seniorYear
 
     let grade = ""
     if (diff === 0) grade = "Senior"
     else if (diff === 1) grade = "Junior"
     else if (diff === 2) grade = "Sophomore"
     else if (diff === 3) grade = "Freshman"
-    else if (diff < 0) grade = "Alumni"
-    else grade = "Future"
+    else grade = "Other"
 
     await addDoc(collection(db, "athletes"), {
       ...form.value,
