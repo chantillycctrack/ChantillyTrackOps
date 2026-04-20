@@ -92,7 +92,7 @@ This version handles the **Winter vs. Spring** selection when creating a meet an
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { db } from '../firebaseConfig'
+import { db } from './firebaseConfig'
 import { collection, query, onSnapshot, addDoc, deleteDoc, doc, orderBy } from 'firebase/firestore'
 
 const meets = ref([])
