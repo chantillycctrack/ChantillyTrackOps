@@ -2,29 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  body {
-    @apply transition-colors duration-300;
-  }
-  
-  /* Default to Dark Mode styles */
-  .dark body {
-    @apply bg-darkBg text-gray-100;
-  }
-
-  /* Light Mode styles */
-  .light body {
-    @apply bg-gray-50 text-gray-900;
-  }
-}
-
-/* Custom "Charger" Card style */
 @layer components {
-  .btn-purple {
-    @apply bg-chantilly hover:bg-chantilly-light text-white font-bold py-2 px-4 rounded-lg shadow-lg transition-all transform hover:scale-105 active:scale-95;
+  .input-field {
+    @apply w-full p-3 rounded-lg border bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-chantilly focus:ring-2 focus:ring-chantilly/20 outline-none transition-all;
   }
   
-  .input-field {
-    @apply w-full p-2 rounded border bg-gray-800 border-gray-700 text-white focus:border-chantilly focus:ring-1 focus:ring-chantilly outline-none transition-all;
+  .btn-purple {
+    @apply bg-[#4B2E83] hover:bg-[#5f3ea3] text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50;
   }
 }
