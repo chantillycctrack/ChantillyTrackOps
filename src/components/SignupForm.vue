@@ -31,7 +31,22 @@
           </select>
         </div>
 
-        <input v-model="form.email" type="email" placeholder="Athlete Email address *" class="input-field" required />
+        <div class="grid grid-cols-2 gap-4">
+          <select v-model="form.gender" class="input-field" required>
+            <option value="">Gender *</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Prefer not to say">Prefer not to say</option>
+          </select>
+          <input v-if="form.gender === 'Prefer not to say'" 
+                 v-model="customGenderText" 
+                 type="text" 
+                 placeholder="Specify (optional)" 
+                 class="input-field" />
+          <input v-else v-model="form.email" type="email" placeholder="Email *" class="input-field" required />
+        </div>
+        
+        <input v-if="form.gender === 'Prefer not to say'" v-model="form.email" type="email" placeholder="Athlete Email address *" class="input-field" required />
       </div>
 
       <hr class="border-gray-100 dark:border-gray-800 my-6" />
@@ -65,17 +80,15 @@ import { ref, computed } from 'vue'
 import { db } from '../firebaseConfig'
 import { collection, addDoc } from 'firebase/firestore'
 
+const customGenderText = ref('')
 const form = ref({ 
   firstName: '', 
   lastName: '', 
   gradYear: '', 
   group: '', 
+  gender: '', // New Field
   email: '', 
-  seasons: {
-    xc: false,
-    indoor: false,
-    outdoor: false // Defaulting to false; participation will be updated via performance data
-  },
+  seasons: { xc: false, indoor: false, outdoor: false },
   parentName1: '', 
   parentEmail1: '',
   parentName2: '',
@@ -109,20 +122,28 @@ const handleSubmit = async () => {
     const grades = ["Senior", "Junior", "Sophomore", "Freshman"]
     const grade = grades[diff] || "Other"
 
+    // Final Gender Logic
+    const finalGender = (form.value.gender === 'Prefer not to say' && customGenderText.value) 
+                        ? customGenderText.value 
+                        : form.value.gender;
+
     await addDoc(collection(db, "athletes"), {
       ...form.value,
+      gender: finalGender, // Save the final calculated gender
       currentGrade: grade,
       timestamp: new Date()
     })
     
     success.value = true
     
-    // Reset form while maintaining seasonal defaults as false
+    // Reset form
     form.value = { 
-      firstName: '', lastName: '', gradYear: '', group: '', email: '', 
+      firstName: '', lastName: '', gradYear: '', group: '', gender: '', email: '', 
       seasons: { xc: false, indoor: false, outdoor: false },
       parentName1: '', parentEmail1: '', parentName2: '', parentEmail2: '', isActive: true 
     }
+    customGenderText.value = ''
+    
     setTimeout(() => { success.value = false }, 5000)
   } catch (e) {
     alert("Error: " + e.message)
