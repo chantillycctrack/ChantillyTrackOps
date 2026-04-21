@@ -139,35 +139,60 @@ onMounted(() => {
 const processCSV = (event) => {
   const file = event.target.files[0]
   if (!file) return
+
   const reader = new FileReader()
   reader.onload = async (e) => {
     const text = e.target.result
     const rows = text.split(/\r?\n/).filter(row => row.trim() !== '')
-    const dataRows = rows.slice(1)
-    const seniorYear = new Date().getMonth() >= 6 ? new Date().getFullYear() + 1 : new Date().getFullYear()
+    const dataRows = rows.slice(1) // Skip Header
+    
+    let count = 0
+    // Current Senior Year based on April 2026 is 2026
+    const now = new Date()
+    const seniorYear = now.getMonth() >= 6 ? now.getFullYear() + 1 : now.getFullYear()
 
     for (const row of dataRows) {
       const cols = row.split(',').map(c => c.trim())
       if (cols.length < 3) continue
-      const [first, last, grad, gender, dob, xc, indoor, outdoor] = cols
-      const isYes = (val) => {
-        if (!val) return false
-        const v = val.toLowerCase()
-        return v === 'yes' || v === 'x' || v === '1' || v === 'true'
-      }
+
+      // Expected Column Order: 
+      // [0]First, [1]Last, [2]Grad, [3]Gender, [4]Birthday, [5]XC, [6]Indoor, [7]Outdoor
+      const [first, last, grad, gender, dob, xcVal, indoorVal, outdoorVal] = cols
+      
       const gYear = parseInt(grad)
       const diff = gYear - seniorYear
       const grades = ["Senior", "Junior", "Sophomore", "Freshman"]
+      const calculatedGrade = grades[diff] || "Other"
+
+      // MileStat Specific Logic: X = XC, I = Indoor, O = Outdoor
+      const isXC = (val) => val?.toUpperCase() === 'X' || val?.toLowerCase() === 'yes' || val === '1'
+      const isIndoor = (val) => val?.toUpperCase() === 'I' || val?.toLowerCase() === 'yes' || val === '1'
+      const isOutdoor = (val) => val?.toUpperCase() === 'O' || val?.toLowerCase() === 'yes' || val === '1'
+
       try {
         await addDoc(collection(db, "athletes"), {
-          firstName: first, lastName: last, gradYear: gYear, gender: gender, birthday: dob || '',
-          currentGrade: grades[diff] || "Other",
-          seasons: { xc: isYes(xc), indoor: isYes(indoor), outdoor: isYes(outdoor) },
-          isActive: true, group: 'General', createdAt: new Date()
+          firstName: first,
+          lastName: last,
+          gradYear: gYear,
+          currentGrade: calculatedGrade,
+          gender: gender,
+          birthday: dob || '',
+          seasons: {
+            xc: isXC(xcVal),
+            indoor: isIndoor(indoorVal),
+            outdoor: isOutdoor(outdoorVal)
+          },
+          isActive: true,
+          group: 'General', 
+          createdAt: new Date()
         })
-      } catch (err) { console.error(err) }
+        count++
+      } catch (err) { 
+        console.error("Row import failed:", err) 
+      }
     }
-    alert('Import Complete.'); event.target.value = ''
+    alert(`Import Successful: ${count} athletes added to the database.`)
+    event.target.value = ''
   }
   reader.readAsText(file)
 }
