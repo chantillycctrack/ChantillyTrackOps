@@ -24,28 +24,41 @@
           </select>
 
           <select v-model="form.group" class="input-field" required>
-            <option value="">Event Group *</option>
+            <option value="">Primary Event *</option>
             <option value="Sprints">Sprints</option>
             <option value="Distance">Distance</option>
             <option value="Throwers">Throwers</option>
+            <option value="Jumps/Vault">Jumps/Vault</option>
           </select>
         </div>
 
         <input v-model="form.email" type="email" placeholder="Athlete Email address *" class="input-field" required />
       </div>
 
-      <hr class="border-gray-100 dark:border-gray-800 my-6" />
-
-      <div class="space-y-4">
-        <label class="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">Parent / Guardian 1 (Optional)</label>
-        <input v-model="form.parentName1" type="text" placeholder="Guardian 1 Name" class="input-field" />
-        <input v-model="form.parentEmail1" type="email" placeholder="Guardian 1 Email" class="input-field" />
+      <div class="space-y-3 pt-2">
+        <label class="text-[10px] font-black uppercase text-chantilly tracking-[0.2em]">Seasons of Interest</label>
+        <div class="grid grid-cols-3 gap-2">
+          <label class="flex items-center justify-center gap-2 p-3 border border-gray-200 dark:border-gray-800 rounded-xl cursor-pointer hover:border-chantilly transition" :class="{'border-chantilly bg-chantilly/5': form.seasons.xc}">
+            <input type="checkbox" v-model="form.seasons.xc" class="hidden" />
+            <span class="text-[10px] font-bold uppercase" :class="form.seasons.xc ? 'text-chantilly' : 'text-gray-400'">XC</span>
+          </label>
+          <label class="flex items-center justify-center gap-2 p-3 border border-gray-200 dark:border-gray-800 rounded-xl cursor-pointer hover:border-chantilly transition" :class="{'border-chantilly bg-chantilly/5': form.seasons.indoor}">
+            <input type="checkbox" v-model="form.seasons.indoor" class="hidden" />
+            <span class="text-[10px] font-bold uppercase" :class="form.seasons.indoor ? 'text-chantilly' : 'text-gray-400'">Indoor</span>
+          </label>
+          <label class="flex items-center justify-center gap-2 p-3 border border-gray-200 dark:border-gray-800 rounded-xl cursor-pointer hover:border-chantilly transition" :class="{'border-chantilly bg-chantilly/5': form.seasons.outdoor}">
+            <input type="checkbox" v-model="form.seasons.outdoor" class="hidden" />
+            <span class="text-[10px] font-bold uppercase" :class="form.seasons.outdoor ? 'text-chantilly' : 'text-gray-400'">Outdoor</span>
+          </label>
+        </div>
       </div>
 
-      <div class="space-y-4 pt-2">
-        <label class="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">Parent / Guardian 2 (Optional)</label>
-        <input v-model="form.parentName2" type="text" placeholder="Guardian 2 Name" class="input-field" />
-        <input v-model="form.parentEmail2" type="email" placeholder="Guardian 2 Email" class="input-field" />
+      <hr class="border-gray-100 dark:border-gray-800 my-4" />
+
+      <div class="space-y-4">
+        <label class="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">Parent / Guardian 1</label>
+        <input v-model="form.parentName1" type="text" placeholder="Guardian Name" class="input-field" />
+        <input v-model="form.parentEmail1" type="email" placeholder="Guardian Email" class="input-field" />
       </div>
 
       <button type="submit" :disabled="loading" class="btn-purple w-full py-4 mt-6 flex justify-center items-center text-sm uppercase tracking-widest font-black">
@@ -71,26 +84,25 @@ const form = ref({
   gradYear: '', 
   group: '', 
   email: '', 
+  seasons: {
+    xc: false,
+    indoor: false,
+    outdoor: true // Default to true since we are in Spring
+  },
   parentName1: '', 
   parentEmail1: '',
-  parentName2: '',
-  parentEmail2: '',
   isActive: true 
 })
 
 const loading = ref(false)
 const success = ref(false)
 
-// Determine the current "Senior" class year based on July 1st cutoff
+// Academic Year Logic
 const currentSeniorYear = computed(() => {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth() // 0-11
-  // If July (6) or later, the current year's class has graduated
-  return month >= 6 ? year + 1 : year
+  const now = new Date();
+  return now.getMonth() >= 6 ? now.getFullYear() + 1 : now.getFullYear();
 })
 
-// Generate exactly 4 years (Sr, Jr, So, Fr)
 const availableYears = computed(() => {
   const senior = currentSeniorYear.value
   return [
@@ -104,16 +116,10 @@ const availableYears = computed(() => {
 const handleSubmit = async () => {
   loading.value = true
   try {
-    // Grade calculation based on the dynamic senior year
     const seniorYear = currentSeniorYear.value
     const diff = form.value.gradYear - seniorYear
-
-    let grade = ""
-    if (diff === 0) grade = "Senior"
-    else if (diff === 1) grade = "Junior"
-    else if (diff === 2) grade = "Sophomore"
-    else if (diff === 3) grade = "Freshman"
-    else grade = "Other"
+    const grades = ["Senior", "Junior", "Sophomore", "Freshman"]
+    const grade = grades[diff] || "Other"
 
     await addDoc(collection(db, "athletes"), {
       ...form.value,
@@ -125,11 +131,12 @@ const handleSubmit = async () => {
     // Reset Form
     form.value = { 
       firstName: '', lastName: '', gradYear: '', group: '', email: '', 
-      parentName1: '', parentEmail1: '', parentName2: '', parentEmail2: '', isActive: true 
+      seasons: { xc: false, indoor: false, outdoor: true },
+      parentName1: '', parentEmail1: '', isActive: true 
     }
     setTimeout(() => { success.value = false }, 5000)
   } catch (e) {
-    alert("Submission Error: " + e.message)
+    alert("Error: " + e.message)
   } finally {
     loading.value = false
   }
