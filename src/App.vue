@@ -40,6 +40,11 @@
                       class="pb-2 font-bold uppercase text-xs tracking-widest transition-all whitespace-nowrap">
                 Athlete Roster
               </button>
+              <button @click="activeTab = 'comm'" 
+                      :class="activeTab === 'comm' ? 'text-chantilly border-b-2 border-chantilly' : 'text-gray-400'" 
+                      class="pb-2 font-bold uppercase text-xs tracking-widest transition-all whitespace-nowrap">
+                Team Communication
+              </button>
               <button @click="activeTab = 'meets'" 
                       :class="activeTab === 'meets' ? 'text-chantilly border-b-2 border-chantilly' : 'text-gray-400'" 
                       class="pb-2 font-bold uppercase text-xs tracking-widest transition-all whitespace-nowrap">
@@ -53,8 +58,9 @@
             </div>
 
             <Roster v-if="activeTab === 'roster'" />
-            <StaffManager v-if="activeTab === 'staff'" />
+            <Communication v-if="activeTab === 'comm'" />
             <MeetManager v-if="activeTab === 'meets'" />
+            <StaffManager v-if="activeTab === 'staff'" />
           </template>
 
           <SignupForm v-else />
@@ -76,6 +82,7 @@ import SignupForm from './components/SignupForm.vue'
 import Roster from './components/Roster.vue'
 import StaffManager from './components/StaffManager.vue'
 import MeetManager from './components/MeetManager.vue'
+import Communication from './components/Communication.vue'
 
 // State
 const isAdmin = ref(false)
