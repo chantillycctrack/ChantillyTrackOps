@@ -22,7 +22,7 @@
 
       <div class="flex flex-wrap items-center gap-6 mt-6 pt-6 border-t border-gray-100 dark:border-gray-800">
         <div class="flex bg-gray-100 dark:bg-black/20 p-1 rounded-lg">
-          <button v-for="g in ['All', 'Sprints', 'Distance', 'Throwers', 'General']" :key="g"
+          <button v-for="g in ['All', 'Sprints', 'Distance', 'Throwers', 'Unassigned']" :key="g"
                   @click="activeGroupFilter = g"
                   :class="activeGroupFilter === g ? 'bg-white dark:bg-gray-800 text-chantilly shadow-sm' : 'text-gray-400'"
                   class="px-4 py-1.5 rounded-md text-[10px] font-black uppercase transition-all">
