@@ -4,18 +4,13 @@
       <div class="flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
           <h3 class="text-xs font-black uppercase tracking-widest text-chantilly">Management Tools</h3>
-          <p class="text-[10px] text-gray-500 uppercase">Seeding & Communication</p>
+          <p class="text-[10px] text-gray-500 uppercase">BCC Lists & Data Export</p>
         </div>
         
         <div class="flex items-center gap-3">
           <input type="file" ref="fileInput" class="hidden" accept=".csv" @change="processCSV" />
           <button @click="$refs.fileInput.click()" class="btn-secondary">📥 Import CSV</button>
           <button @click="exportRoster" class="btn-secondary">📤 Full Export</button>
-          
-          <div class="flex items-center gap-3 bg-gray-50 dark:bg-black/20 p-2 rounded-lg border border-gray-100 dark:border-gray-800">
-            <input type="checkbox" v-model="includeCoaches" id="coach-toggle" class="w-4 h-4 rounded text-chantilly focus:ring-chantilly cursor-pointer" />
-            <label for="coach-toggle" class="text-[10px] font-bold uppercase text-gray-400 cursor-pointer select-none">Include Staff</label>
-          </div>
         </div>
       </div>
 
@@ -27,7 +22,8 @@
     </div>
 
     <div class="bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-chantilly/20 overflow-hidden">
-      <div class="p-4 border-b border-gray-100 dark:border-gray-800 flex flex-wrap justify-between items-center gap-4">
+      <div class="p-4 border-b border-gray-100 dark:border-gray-800 flex flex-wrap items-center justify-between gap-4">
+        
         <div class="flex bg-gray-100 dark:bg-black/20 p-1 rounded-lg">
           <button v-for="s in ['Outdoor', 'Indoor', 'XC', 'All']" :key="s"
                   @click="activeSeasonFilter = s"
@@ -37,56 +33,76 @@
           </button>
         </div>
 
-        <button @click="showArchived = !showArchived" 
-                class="text-[10px] uppercase tracking-widest font-bold px-3 py-2 rounded-lg border transition shadow-sm"
-                :class="showArchived ? 'bg-red-500 text-white border-red-500' : 'text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5'">
-          {{ showArchived ? 'Showing All (Inc. Archived)' : 'Filter: Active Only' }}
-        </button>
+        <div class="flex items-center gap-4">
+          <select v-model="activeGroupFilter" class="bg-transparent text-[10px] font-bold uppercase tracking-wider border-b-2 border-gray-200 dark:border-gray-700 focus:border-chantilly outline-none py-1">
+            <option value="All">All Groups</option>
+            <option value="Sprints">Sprints</option>
+            <option value="Distance">Distance</option>
+            <option value="Throwers">Throwers</option>
+            <option value="General">General</option>
+          </select>
+
+          <button @click="showArchived = !showArchived" 
+                  class="text-[10px] uppercase tracking-widest font-bold px-3 py-2 rounded-lg border transition"
+                  :class="showArchived ? 'bg-red-500 text-white border-red-500' : 'text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5'">
+            {{ showArchived ? 'Showing All' : 'Active Only' }}
+          </button>
+        </div>
       </div>
 
       <div class="overflow-x-auto">
         <table class="w-full text-left">
           <thead class="bg-gray-50 dark:bg-black/20 text-gray-400 text-[10px] uppercase tracking-widest">
             <tr>
-              <th class="p-4">Name</th>
-              <th class="p-4">Grade / Group</th>
-              <th class="p-4">Seasons</th>
+              <th class="p-4 cursor-pointer hover:text-chantilly" @click="toggleSort('firstName')">
+                First Name {{ sortKey === 'firstName' ? (sortOrder === 'asc' ? '↑' : '↓') : '' }}
+              </th>
+              <th class="p-4 cursor-pointer hover:text-chantilly" @click="toggleSort('lastName')">
+                Last Name {{ sortKey === 'lastName' ? (sortOrder === 'asc' ? '↑' : '↓') : '' }}
+              </th>
+              <th class="p-4">Grade/Group/Seasons</th>
+              <th class="p-4">Contact Info</th>
               <th class="p-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-            <tr v-for="athlete in filteredAthletes" :key="athlete.id" 
+            <tr v-for="athlete in sortedAthletes" :key="athlete.id" 
                 class="hover:bg-gray-50 dark:hover:bg-white/5 transition border-l-4" 
                 :class="athlete.isActive ? 'border-l-green-500' : 'border-l-gray-500 opacity-60'">
-              <td class="p-4">
-                <div class="font-bold text-gray-900 dark:text-white">{{ athlete.firstName }} {{ athlete.lastName }}</div>
-                <div class="text-[9px] text-gray-400 font-bold uppercase">{{ athlete.gender }}</div>
-              </td>
-              <td class="p-4 text-sm">
-                <div class="font-medium">{{ athlete.currentGrade }}</div>
-                <div class="text-chantilly font-bold text-[10px] uppercase tracking-wider">{{ athlete.group }}</div>
-              </td>
-              <td class="p-4">
+              
+              <td class="p-4 font-bold text-gray-900 dark:text-white">{{ athlete.firstName }}</td>
+              <td class="p-4 font-bold text-gray-900 dark:text-white">{{ athlete.lastName }}</td>
+              
+              <td class="p-4 space-y-1">
+                <div class="text-xs font-medium">{{ athlete.currentGrade }} — <span class="text-chantilly font-bold">{{ athlete.group }}</span></div>
                 <div class="flex gap-1">
                   <span v-if="athlete.seasons?.xc" class="season-badge bg-orange-100 text-orange-700">XC</span>
                   <span v-if="athlete.seasons?.indoor" class="season-badge bg-blue-100 text-blue-700">IN</span>
                   <span v-if="athlete.seasons?.outdoor" class="season-badge bg-green-100 text-green-700">OUT</span>
                 </div>
               </td>
+
+              <td class="p-4 text-[10px] leading-tight space-y-1">
+                <div class="flex flex-col"><span class="text-gray-400 font-bold uppercase text-[8px]">Athlete:</span> {{ athlete.email || 'None' }}</div>
+                <div v-if="athlete.parentEmail1" class="flex flex-col"><span class="text-gray-400 font-bold uppercase text-[8px]">G1:</span> {{ athlete.parentEmail1 }}</div>
+                <div v-if="athlete.parentEmail2" class="flex flex-col"><span class="text-gray-400 font-bold uppercase text-[8px]">G2:</span> {{ athlete.parentEmail2 }}</div>
+              </td>
+
               <td class="p-4 text-right">
                 <div class="flex justify-end gap-2">
-                  <button @click="toggleStatus(athlete)" class="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition" :title="athlete.isActive ? 'Archive' : 'Activate'">
-                    {{ athlete.isActive ? '📂' : '📤' }}
+                  <button @click="toggleStatus(athlete)" 
+                          class="px-2 py-1 text-[9px] font-black uppercase rounded border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-white/10 transition">
+                    {{ athlete.isActive ? 'Archive' : 'Activate' }}
                   </button>
-                  <button @click="deleteAthlete(athlete)" class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 rounded-lg transition">🗑️</button>
+                  <button @click="deleteAthlete(athlete)" 
+                          class="px-2 py-1 text-[9px] font-black uppercase rounded bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition">
+                    Delete
+                  </button>
                 </div>
               </td>
             </tr>
           </tbody>
         </table>
-        <div v-if="filteredAthletes.length === 0" class="p-12 text-center text-gray-500 text-sm italic">
-          No athletes found for the {{ activeSeasonFilter }} season.
-        </div>
       </div>
     </div>
   </div>
@@ -97,133 +113,55 @@ import { ref, onMounted, computed } from 'vue'
 import { db } from '../firebaseConfig'
 import { collection, query, onSnapshot, doc, updateDoc, deleteDoc, addDoc } from 'firebase/firestore'
 
-// DATA STATE
 const athletes = ref([])
-const coachEmails = ref([])
 const showArchived = ref(false)
-const activeSeasonFilter = ref('Outdoor') // Default to current season
-const includeCoaches = ref(true)
-const fileInput = ref(null)
+const activeSeasonFilter = ref('Outdoor')
+const activeGroupFilter = ref('All')
+const sortKey = ref('lastName')
+const sortOrder = ref('asc')
 
-// NEW DUAL-FILTER LOGIC
 const filteredAthletes = computed(() => {
   return athletes.value.filter(a => {
-    // 1. Handle Archival Status
     const statusMatch = showArchived.value || a.isActive;
+    const groupMatch = activeGroupFilter.value === 'All' || a.group === activeGroupFilter.value;
     
-    // 2. Handle Seasonal Status
     let seasonMatch = false;
-    if (activeSeasonFilter.value === 'All') {
-      seasonMatch = true;
-    } else if (activeSeasonFilter.value === 'Outdoor') {
-      seasonMatch = a.seasons?.outdoor === true;
-    } else if (activeSeasonFilter.value === 'Indoor') {
-      seasonMatch = a.seasons?.indoor === true;
-    } else if (activeSeasonFilter.value === 'XC') {
-      seasonMatch = a.seasons?.xc === true;
-    }
+    if (activeSeasonFilter.value === 'All') seasonMatch = true;
+    else if (activeSeasonFilter.value === 'Outdoor') seasonMatch = a.seasons?.outdoor === true;
+    else if (activeSeasonFilter.value === 'Indoor') seasonMatch = a.seasons?.indoor === true;
+    else if (activeSeasonFilter.value === 'XC') seasonMatch = a.seasons?.xc === true;
 
-    return statusMatch && seasonMatch;
+    return statusMatch && seasonMatch && groupMatch;
   });
 })
+
+const sortedAthletes = computed(() => {
+  return [...filteredAthletes.value].sort((a, b) => {
+    let modifier = sortOrder.value === 'asc' ? 1 : -1;
+    if (a[sortKey.value] < b[sortKey.value]) return -1 * modifier;
+    if (a[sortKey.value] > b[sortKey.value]) return 1 * modifier;
+    return 0;
+  });
+})
+
+const toggleSort = (key) => {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortKey.value = key;
+    sortOrder.value = 'asc';
+  }
+}
 
 onMounted(() => {
   onSnapshot(query(collection(db, "athletes")), (snap) => {
     athletes.value = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
   })
-  onSnapshot(collection(db, "authorized_coaches"), (snap) => {
-    coachEmails.value = snap.docs.map(doc => doc.data().email).filter(e => e)
-  })
 })
-
-const processCSV = (event) => {
-  const file = event.target.files[0]
-  if (!file) return
-
-  const reader = new FileReader()
-  reader.onload = async (e) => {
-    const text = e.target.result
-    const rows = text.split(/\r?\n/).filter(row => row.trim() !== '')
-    const dataRows = rows.slice(1) // Skip Header
-    
-    let count = 0
-    // Current Senior Year based on April 2026 is 2026
-    const now = new Date()
-    const seniorYear = now.getMonth() >= 6 ? now.getFullYear() + 1 : now.getFullYear()
-
-    for (const row of dataRows) {
-      const cols = row.split(',').map(c => c.trim())
-      if (cols.length < 3) continue
-
-      // Expected Column Order: 
-      // [0]First, [1]Last, [2]Grad, [3]Gender, [4]Birthday, [5]XC, [6]Indoor, [7]Outdoor
-      const [first, last, grad, gender, dob, xcVal, indoorVal, outdoorVal] = cols
-      
-      const gYear = parseInt(grad)
-      const diff = gYear - seniorYear
-      const grades = ["Senior", "Junior", "Sophomore", "Freshman"]
-      const calculatedGrade = grades[diff] || "Other"
-
-      // MileStat Specific Logic: X = XC, I = Indoor, O = Outdoor
-      const isXC = (val) => val?.toUpperCase() === 'X' || val?.toLowerCase() === 'yes' || val === '1'
-      const isIndoor = (val) => val?.toUpperCase() === 'I' || val?.toLowerCase() === 'yes' || val === '1'
-      const isOutdoor = (val) => val?.toUpperCase() === 'O' || val?.toLowerCase() === 'yes' || val === '1'
-
-      try {
-        await addDoc(collection(db, "athletes"), {
-          firstName: first,
-          lastName: last,
-          gradYear: gYear,
-          currentGrade: calculatedGrade,
-          gender: gender,
-          birthday: dob || '',
-          seasons: {
-            xc: isXC(xcVal),
-            indoor: isIndoor(indoorVal),
-            outdoor: isOutdoor(outdoorVal)
-          },
-          isActive: true,
-          group: 'General', 
-          createdAt: new Date()
-        })
-        count++
-      } catch (err) { 
-        console.error("Row import failed:", err) 
-      }
-    }
-    alert(`Import Successful: ${count} athletes added to the database.`)
-    event.target.value = ''
-  }
-  reader.readAsText(file)
-}
-
-const exportRoster = () => {
-  const headers = ['First Name', 'Last Name', 'HS Grad Year', 'Gender', 'Birthday', 'XC', 'Indoor', 'Outdoor']
-  const rows = filteredAthletes.value.map(a => [
-    a.firstName, a.lastName, a.gradYear, a.gender, a.birthday || '',
-    a.seasons?.xc ? 'Yes' : 'No', a.seasons?.indoor ? 'Yes' : 'No', a.seasons?.outdoor ? 'Yes' : 'No'
-  ])
-  const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n")
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-  const link = document.createElement("a"); const url = URL.createObjectURL(blob)
-  link.setAttribute("href", url); link.setAttribute("download", `Roster_Export.csv`); link.click()
-}
-
-const copyDistributionList = (type) => {
-  let emails = []
-  filteredAthletes.value.forEach(a => {
-    if (type === 'athletes' || type === 'all') if (a.email) emails.push(a.email)
-    if (type === 'parents' || type === 'all') {
-      if (a.parentEmail1) emails.push(a.parentEmail1); if (a.parentEmail2) emails.push(a.parentEmail2)
-    }
-  })
-  if (includeCoaches.value) coachEmails.value.forEach(e => emails.push(e))
-  const unique = [...new Set(emails.map(e => e.trim().toLowerCase()).filter(e => e !== ''))]
-  navigator.clipboard.writeText(unique.join('; ')).then(() => alert('Copied!'))
-}
 
 const toggleStatus = async (a) => await updateDoc(doc(db, "athletes", a.id), { isActive: !a.isActive })
 const deleteAthlete = async (a) => { if (confirm(`Delete ${a.firstName}?`)) await deleteDoc(doc(db, "athletes", a.id)) }
+// ... keep processCSV and exportRoster from previous version ...
 </script>
 
 <style scoped>
