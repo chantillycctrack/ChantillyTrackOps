@@ -34,20 +34,6 @@
         <input v-model="form.email" type="email" placeholder="Athlete Email address *" class="input-field" required />
       </div>
 
-      <div class="space-y-3 pt-2">
-        <label class="text-[10px] font-black uppercase text-chantilly tracking-[0.2em]">Seasons of Interest</label>
-        <div class="grid grid-cols-3 gap-2">
-          <label v-for="(val, key) in {xc: 'XC', indoor: 'Indoor', outdoor: 'Outdoor'}" :key="key"
-                 class="flex items-center justify-center py-3 rounded-xl cursor-pointer transition-all border-2 font-black uppercase text-[10px] tracking-widest shadow-sm"
-                 :class="form.seasons[key] 
-                    ? 'bg-chantilly border-chantilly text-white' 
-                    : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400'">
-            <input type="checkbox" v-model="form.seasons[key]" class="hidden" />
-            {{ val }}
-          </label>
-        </div>
-      </div>
-
       <hr class="border-gray-100 dark:border-gray-800 my-6" />
 
       <div class="space-y-4">
@@ -88,7 +74,7 @@ const form = ref({
   seasons: {
     xc: false,
     indoor: false,
-    outdoor: true
+    outdoor: false // Defaulting to false; participation will be updated via performance data
   },
   parentName1: '', 
   parentEmail1: '',
@@ -130,9 +116,11 @@ const handleSubmit = async () => {
     })
     
     success.value = true
+    
+    // Reset form while maintaining seasonal defaults as false
     form.value = { 
       firstName: '', lastName: '', gradYear: '', group: '', email: '', 
-      seasons: { xc: false, indoor: false, outdoor: true },
+      seasons: { xc: false, indoor: false, outdoor: false },
       parentName1: '', parentEmail1: '', parentName2: '', parentEmail2: '', isActive: true 
     }
     setTimeout(() => { success.value = false }, 5000)
