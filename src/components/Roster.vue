@@ -22,21 +22,13 @@
 
       <div class="flex flex-wrap items-center gap-6 mt-6 pt-6 border-t border-gray-100 dark:border-gray-800">
         <div class="flex bg-gray-100 dark:bg-black/20 p-1 rounded-lg">
-          <button v-for="s in ['Outdoor', 'Indoor', 'XC', 'All']" :key="s"
-                  @click="activeSeasonFilter = s"
-                  :class="activeSeasonFilter === s ? 'bg-white dark:bg-gray-800 text-chantilly shadow-sm' : 'text-gray-400'"
+          <button v-for="g in ['All', 'Sprints', 'Distance', 'Throwers', 'General']" :key="g"
+                  @click="activeGroupFilter = g"
+                  :class="activeGroupFilter === g ? 'bg-white dark:bg-gray-800 text-chantilly shadow-sm' : 'text-gray-400'"
                   class="px-4 py-1.5 rounded-md text-[10px] font-black uppercase transition-all">
-            {{ s }}
+            {{ g }}
           </button>
         </div>
-
-        <select v-model="activeGroupFilter" class="bg-transparent text-[10px] font-bold uppercase tracking-wider border-b-2 border-gray-200 dark:border-gray-700 focus:border-chantilly outline-none py-1">
-          <option value="All">All Groups</option>
-          <option value="Sprints">Sprints</option>
-          <option value="Distance">Distance</option>
-          <option value="Throwers">Throwers</option>
-          <option value="General">General</option>
-        </select>
       </div>
     </div>
 
@@ -61,7 +53,6 @@
                 Group {{ sortKey === 'group' ? (sortOrder === 'asc' ? '↑' : '↓') : '' }}
               </th>
               <th class="p-4">Contact Info</th>
-              <th class="p-4">Seasons</th>
               <th class="p-4 text-right">Actions</th>
             </tr>
           </thead>
@@ -80,14 +71,6 @@
                 <div class="flex flex-col"><span class="text-gray-400 font-bold uppercase text-[8px]">Ath:</span> {{ athlete.email || '-' }}</div>
                 <div v-if="athlete.parentEmail1" class="flex flex-col"><span class="text-gray-400 font-bold uppercase text-[8px]">G1:</span> {{ athlete.parentEmail1 }}</div>
                 <div v-if="athlete.parentEmail2" class="flex flex-col"><span class="text-gray-400 font-bold uppercase text-[8px]">G2:</span> {{ athlete.parentEmail2 }}</div>
-              </td>
-
-              <td class="p-4">
-                <div class="flex gap-1">
-                  <span v-if="athlete.seasons?.xc" class="season-badge bg-orange-100 text-orange-700">XC</span>
-                  <span v-if="athlete.seasons?.indoor" class="season-badge bg-blue-100 text-blue-700">IN</span>
-                  <span v-if="athlete.seasons?.outdoor" class="season-badge bg-green-100 text-green-700">OUT</span>
-                </div>
               </td>
 
               <td class="p-4 text-right">
@@ -113,14 +96,12 @@ import { collection, query, onSnapshot, doc, updateDoc, deleteDoc, addDoc, write
 
 const athletes = ref([])
 const showArchived = ref(false)
-const activeSeasonFilter = ref('Outdoor')
 const activeGroupFilter = ref('All')
 const searchQuery = ref('')
 const sortKey = ref('lastName')
 const sortOrder = ref('asc')
 const fileInput = ref(null)
 
-// Map word grades to numeric values for logical sorting
 const gradeSortMap = { 'Freshman': 1, 'Sophomore': 2, 'Junior': 3, 'Senior': 4 }
 
 const filteredAthletes = computed(() => {
@@ -128,33 +109,43 @@ const filteredAthletes = computed(() => {
     const statusMatch = showArchived.value || a.isActive;
     const groupMatch = activeGroupFilter.value === 'All' || a.group === activeGroupFilter.value;
     const searchMatch = (a.firstName + ' ' + a.lastName).toLowerCase().includes(searchQuery.value.toLowerCase());
-    
-    let seasonMatch = false;
-    if (activeSeasonFilter.value === 'All') seasonMatch = true;
-    else if (activeSeasonFilter.value === 'Outdoor') seasonMatch = a.seasons?.outdoor === true;
-    else if (activeSeasonFilter.value === 'Indoor') seasonMatch = a.seasons?.indoor === true;
-    else if (activeSeasonFilter.value === 'XC') seasonMatch = a.seasons?.xc === true;
-
-    return statusMatch && groupMatch && searchMatch && seasonMatch;
+    return statusMatch && groupMatch && searchMatch;
   });
 })
 
 const sortedAthletes = computed(() => {
   return [...filteredAthletes.value].sort((a, b) => {
     let modifier = sortOrder.value === 'asc' ? 1 : -1;
-    let valA = a[sortKey.value];
-    let valB = b[sortKey.value];
-
+    
+    // 1. PRIMARY SORT
+    let valA, valB;
     if (sortKey.value === 'currentGrade') {
-      valA = gradeSortMap[valA] || 0;
-      valB = gradeSortMap[valB] || 0;
+      valA = gradeSortMap[a.currentGrade] || 0;
+      valB = gradeSortMap[b.currentGrade] || 0;
     } else {
-      valA = valA?.toString().toLowerCase() || '';
-      valB = valB?.toString().toLowerCase() || '';
+      valA = a[sortKey.value]?.toString().toLowerCase() || '';
+      valB = b[sortKey.value]?.toString().toLowerCase() || '';
     }
 
     if (valA < valB) return -1 * modifier;
     if (valA > valB) return 1 * modifier;
+
+    // 2. SECONDARY SORT (Tie-breaker: Last Name)
+    if (sortKey.value !== 'lastName') {
+      const lastA = a.lastName?.toLowerCase() || '';
+      const lastB = b.lastName?.toLowerCase() || '';
+      if (lastA < lastB) return -1;
+      if (lastA > lastB) return 1;
+    }
+
+    // 3. TERTIARY SORT (Tie-breaker: First Name)
+    if (sortKey.value !== 'firstName') {
+      const firstA = a.firstName?.toLowerCase() || '';
+      const firstB = b.firstName?.toLowerCase() || '';
+      if (firstA < firstB) return -1;
+      if (firstA > firstB) return 1;
+    }
+
     return 0;
   });
 })
@@ -173,7 +164,6 @@ onMounted(() => {
     const fetched = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
     athletes.value = fetched
 
-    // Graduation Sweep (July Logic)
     const now = new Date()
     if (now.getMonth() >= 6) {
       const batch = writeBatch(db)
@@ -204,7 +194,7 @@ const processCSV = (event) => {
       const cols = row.split(',')
       if (cols.length < 3) continue
       
-      const [first, last, grad, gender, dob, xc, indoor, outdoor] = cols.map(c => c.replace(/"/g, '').trim())
+      const [first, last, grad, gender, dob] = cols.map(c => c.replace(/"/g, '').trim())
       const gYear = parseInt(grad)
       const diff = gYear - seniorYear
       const grades = ["Senior", "Junior", "Sophomore", "Freshman"]
@@ -213,7 +203,7 @@ const processCSV = (event) => {
         await addDoc(collection(db, "athletes"), {
           firstName: first, lastName: last, gradYear: gYear, gender, birthday: dob,
           currentGrade: grades[diff] || "Other",
-          seasons: { xc: xc === 'X', indoor: indoor === 'I', outdoor: outdoor === 'O' },
+          seasons: { xc: false, indoor: false, outdoor: false }, // Resetting to false for auto-trigger
           isActive: true, group: 'General', createdAt: new Date()
         })
       } catch (err) { console.error(err) }
@@ -224,10 +214,9 @@ const processCSV = (event) => {
 }
 
 const exportRoster = () => {
-  const headers = ['First Name', 'Last Name', 'HS Grad Year', 'Gender', 'Birthday', 'XC', 'Indoor', 'Outdoor']
+  const headers = ['First Name', 'Last Name', 'HS Grad Year', 'Gender', 'Birthday']
   const rows = sortedAthletes.value.map(a => [
-    a.firstName, a.lastName, a.gradYear, a.gender, a.birthday || '',
-    a.seasons?.xc ? 'X' : '', a.seasons?.indoor ? 'I' : '', a.seasons?.outdoor ? 'O' : ''
+    a.firstName, a.lastName, a.gradYear, a.gender, a.birthday || ''
   ])
   const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n")
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
@@ -244,5 +233,4 @@ const deleteAthlete = async (a) => { if (confirm(`Delete ${a.firstName}?`)) awai
 .btn-secondary { @apply px-3 py-2 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 transition rounded-lg text-[10px] font-bold uppercase tracking-widest text-gray-400; }
 .action-btn { @apply px-2 py-1 text-[9px] font-black uppercase rounded border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-white/10 transition; }
 .action-btn-red { @apply px-2 py-1 text-[9px] font-black uppercase rounded bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition; }
-.season-badge { @apply text-[8px] font-black px-1.5 py-0.5 rounded uppercase; }
 </style>
