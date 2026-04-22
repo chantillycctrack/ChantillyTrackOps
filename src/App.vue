@@ -50,6 +50,11 @@
                       class="pb-2 font-bold uppercase text-xs tracking-widest transition-all whitespace-nowrap">
                 Meet Management
               </button>
+              <button @click="activeTab = 'entries'" 
+                      :class="activeTab === 'entries' ? 'text-chantilly border-b-2 border-chantilly' : 'text-gray-400'" 
+                      class="pb-2 font-bold uppercase text-xs tracking-widest transition-all whitespace-nowrap">
+                Meet Entries
+              </button>
               <button @click="activeTab = 'staff'" 
                       :class="activeTab === 'staff' ? 'text-chantilly border-b-2 border-chantilly' : 'text-gray-400'" 
                       class="pb-2 font-bold uppercase text-xs tracking-widest transition-all whitespace-nowrap">
@@ -60,6 +65,7 @@
             <Roster v-if="activeTab === 'roster'" />
             <Communication v-if="activeTab === 'comm'" />
             <MeetManager v-if="activeTab === 'meets'" />
+            <MeetEntries v-if="activeTab === 'Entries'" />
             <StaffManager v-if="activeTab === 'staff'" />
           </template>
 
@@ -82,6 +88,7 @@ import SignupForm from './components/SignupForm.vue'
 import Roster from './components/Roster.vue'
 import StaffManager from './components/StaffManager.vue'
 import MeetManager from './components/MeetManager.vue'
+import MeetEntries from './components/MeetEntries.vue'
 import Communication from './components/Communication.vue'
 
 // State
