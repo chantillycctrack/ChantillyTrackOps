@@ -9,7 +9,7 @@
       </div>
 
       <div class="w-full md:w-80 space-y-2">
-        <label class="text-[10px] font-black uppercase text-chantilly tracking-[0.2em] ml-1">Upcoming Meets Only</label>
+        <label class="text-[10px] font-black uppercase text-chantilly tracking-[0.2em] ml-1">Select Active Meet</label>
         <select v-model="selectedMeetId" class="input-field-comm !py-3 !bg-white dark:!bg-gray-900 shadow-xl border-2 border-chantilly/20 focus:border-chantilly">
           <option value="" disabled>Select a Meet...</option>
           <option v-for="meet in upcomingMeets" :key="meet.id" :value="meet.id">
@@ -28,8 +28,8 @@
               {{ viewMode === 'event' ? 'Events' : 'Athletes' }}
             </h3>
             <div class="flex bg-gray-100 dark:bg-black/40 p-1 rounded-lg scale-90">
-              <button @click="viewMode = 'event'" :class="viewMode === 'event' ? 'bg-white dark:bg-gray-800 text-chantilly shadow-sm' : 'text-gray-500'" class="px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all">Event</button>
-              <button @click="viewMode = 'athlete'" :class="viewMode === 'athlete' ? 'bg-white dark:bg-gray-800 text-chantilly shadow-sm' : 'text-gray-500'" class="px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all">Ath</button>
+              <button @click="viewMode = 'event'; activeSelection = null" :class="viewMode === 'event' ? 'bg-white dark:bg-gray-800 text-chantilly shadow-sm' : 'text-gray-500'" class="px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all">Event</button>
+              <button @click="viewMode = 'athlete'; activeSelection = null" :class="viewMode === 'athlete' ? 'bg-white dark:bg-gray-800 text-chantilly shadow-sm' : 'text-gray-500'" class="px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all">Ath</button>
             </div>
           </div>
 
@@ -43,16 +43,34 @@
                 <span class="text-[9px] font-black opacity-50">{{ getEntryCount(event.name) }}/{{ event.limit || '∞' }}</span>
               </button>
             </div>
+
+            <div v-else>
+              <button v-for="athlete in activeRoster" :key="athlete.id"
+                      @click="activeSelection = athlete.id"
+                      :class="activeSelection === athlete.id ? 'border-l-4 border-chantilly bg-chantilly/5 text-chantilly' : 'text-gray-500 dark:text-gray-400'"
+                      class="w-full text-left p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition flex justify-between items-center border-b border-gray-50 dark:border-gray-800/50">
+                <div class="flex flex-col">
+                  <span class="text-xs font-bold">{{ athlete.firstName }} {{ athlete.lastName }}</span>
+                  <span class="text-[8px] font-black uppercase opacity-50">{{ athlete.group }}</span>
+                </div>
+                <span class="text-[9px] font-black px-2 py-0.5 bg-chantilly/10 rounded">{{ getAthleteEntryCount(athlete.id) }}</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       <div class="md:col-span-8">
         <div v-if="activeSelection" class="bg-white dark:bg-gray-900 p-0 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden min-h-[500px]">
+          
           <div class="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/30 dark:bg-black/10">
             <div>
-              <h2 class="text-xl font-black uppercase text-gray-900 dark:text-white leading-none">{{ activeSelection }}</h2>
-              <p class="text-[10px] text-chantilly font-bold uppercase tracking-widest mt-1">Seeding by {{ perfToggle === 'SB' ? 'Season Best' : 'Personal Record' }}</p>
+              <h2 class="text-xl font-black uppercase text-gray-900 dark:text-white leading-none">
+                {{ viewMode === 'event' ? activeSelection : getAthleteName(activeSelection) }}
+              </h2>
+              <p class="text-[10px] text-chantilly font-bold uppercase tracking-widest mt-1">
+                Seeding by {{ perfToggle === 'SB' ? 'Season Best' : 'Personal Record' }}
+              </p>
             </div>
             <div class="flex bg-gray-100 dark:bg-black/20 p-1 rounded-xl">
               <button @click="perfToggle = 'SB'" :class="perfToggle === 'SB' ? 'bg-white dark:bg-gray-800 text-chantilly shadow-sm' : 'text-gray-400'" class="px-4 py-2 text-[10px] font-black uppercase rounded-lg transition-all">SB</button>
@@ -60,7 +78,7 @@
             </div>
           </div>
 
-          <div class="p-4">
+          <div v-if="viewMode === 'event'" class="p-4">
             <table class="w-full text-left">
               <thead>
                 <tr class="text-[9px] uppercase font-black text-gray-400 border-b border-gray-100 dark:border-gray-800">
@@ -82,7 +100,7 @@
                   </td>
                   <td class="px-4 py-4 text-right">
                     <button @click="toggleEntry(athlete, activeSelection)"
-                            :class="isEntered(athlete.id, activeSelection) ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' : 'border border-gray-200 dark:border-gray-700 text-gray-400 hover:border-chantilly hover:text-chantilly hover:bg-chantilly/5'"
+                            :class="isEntered(athlete.id, activeSelection) ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' : 'border border-gray-200 dark:border-gray-700 text-gray-400 hover:border-chantilly hover:text-chantilly'"
                             class="px-5 py-2 rounded-xl text-[9px] font-black uppercase transition-all transform active:scale-95">
                       {{ isEntered(athlete.id, activeSelection) ? '✓ Entered' : '+ Entry' }}
                     </button>
@@ -91,13 +109,26 @@
               </tbody>
             </table>
           </div>
+
+          <div v-else class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+             <div v-for="event in selectedMeet.events" :key="event.name" 
+                  @click="toggleEntry(activeRoster.find(a => a.id === activeSelection), event.name)"
+                  :class="isEntered(activeSelection, event.name) ? 'border-chantilly bg-chantilly/5' : 'border-gray-100 dark:border-gray-800'"
+                  class="p-4 border-2 rounded-2xl cursor-pointer hover:border-chantilly transition-all group">
+                <div class="flex justify-between items-center">
+                  <span class="text-xs font-bold" :class="isEntered(activeSelection, event.name) ? 'text-chantilly' : 'text-gray-500'">{{ event.name }}</span>
+                  <div v-if="isEntered(activeSelection, event.name)" class="w-2 h-2 rounded-full bg-chantilly shadow-[0_0_8px_rgba(75,46,131,0.5)]"></div>
+                </div>
+                <div class="mt-2 text-[10px] font-mono text-gray-400">
+                  Mark: {{ getPerformanceMark(activeRoster.find(a => a.id === activeSelection), event.name) }}
+                </div>
+             </div>
+          </div>
         </div>
 
         <div v-else class="flex flex-col items-center justify-center h-full bg-white dark:bg-gray-900 p-12 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 border-dashed">
-          <div class="w-16 h-16 bg-chantilly/10 rounded-full flex items-center justify-center mb-4">
-             <span class="text-2xl">⚡</span>
-          </div>
-          <p class="text-gray-400 text-[10px] uppercase font-black tracking-[0.2em]">Select an event to start entries</p>
+          <div class="w-16 h-16 bg-chantilly/10 rounded-full flex items-center justify-center mb-4 text-2xl">⚡</div>
+          <p class="text-gray-400 text-[10px] uppercase font-black tracking-[0.2em]">Select an {{ viewMode }} to start entries</p>
         </div>
       </div>
     </div>
@@ -114,6 +145,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { db } from '../firebaseConfig'
 import { collection, onSnapshot, query, orderBy, where, addDoc, deleteDoc, doc } from 'firebase/firestore'
 
+// REFS
 const meets = ref([])
 const athletes = ref([])
 const meetEntries = ref([])
@@ -122,9 +154,9 @@ const viewMode = ref('event')
 const activeSelection = ref(null)
 const perfToggle = ref('SB') 
 
-// SMART FILTERING: Only shows meets from Today onwards, sorted by closest first
+// COMPUTED
 const upcomingMeets = computed(() => {
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const today = new Date().toISOString().split('T')[0];
   return meets.value
     .filter(m => m.date >= today)
     .sort((a, b) => a.date.localeCompare(b.date));
@@ -134,17 +166,22 @@ const selectedMeet = computed(() => meets.value.find(m => m.id === selectedMeetI
 const activeRoster = computed(() => athletes.value.filter(a => a.isActive))
 
 const filteredRoster = computed(() => {
-  if (!activeSelection.value) return []
+  if (!activeSelection.value || viewMode.value !== 'event') return []
   const eventName = activeSelection.value.toLowerCase()
+  
   return activeRoster.value.filter(a => {
     const isFemaleEvent = eventName.includes('girls') || eventName.includes('female')
     const isMaleEvent = eventName.includes('boys') || eventName.includes('male')
-    if (isFemaleEvent) return a.gender?.toLowerCase().startsWith('f')
-    if (isMaleEvent) return a.gender?.toLowerCase().startsWith('m')
+    const isFemaleAthlete = a.gender?.toLowerCase().startsWith('f')
+    const isMaleAthlete = a.gender?.toLowerCase().startsWith('m')
+
+    if (isFemaleEvent) return isFemaleAthlete
+    if (isMaleEvent) return isMaleAthlete
     return true 
   })
 })
 
+// ACTIONS
 onMounted(() => {
   onSnapshot(query(collection(db, "meets"), orderBy("date", "asc")), (snap) => {
     meets.value = snap.docs.map(d => ({ id: d.id, ...d.data() }))
@@ -163,13 +200,20 @@ watch(selectedMeetId, (newId) => {
   onSnapshot(query(collection(db, "meet_entries"), where("meetId", "==", newId)), (snap) => {
     meetEntries.value = snap.docs.map(d => ({ id: d.id, ...d.data() }))
   })
+  activeSelection.value = null
 })
 
-const isEntered = (athleteId, eventName) => meetEntries.value.some(e => e.athleteId === athleteId && e.eventName === eventName)
+const isEntered = (athleteId, eventName) => {
+  return meetEntries.value.some(e => e.athleteId === athleteId && e.eventName === eventName)
+}
+
 const getEntryCount = (eventName) => meetEntries.value.filter(e => e.eventName === eventName).length
+const getAthleteEntryCount = (athleteId) => meetEntries.value.filter(e => e.athleteId === athleteId).length
 
 const toggleEntry = async (athlete, eventName) => {
+  if (!athlete || !eventName) return
   const existing = meetEntries.value.find(e => e.athleteId === athlete.id && e.eventName === eventName)
+  
   if (existing) {
     await deleteDoc(doc(db, "meet_entries", existing.id))
   } else {
@@ -178,6 +222,7 @@ const toggleEntry = async (athlete, eventName) => {
       alert(`Entry Limit Reached! Limit is ${eventLimit}.`)
       return
     }
+
     await addDoc(collection(db, "meet_entries"), {
       meetId: selectedMeetId.value,
       athleteId: athlete.id,
@@ -193,6 +238,11 @@ const getPerformanceMark = (athlete, eventName) => {
   if (!athlete?.performances) return 'No Mark'
   const match = athlete.performances.find(p => p.event === eventName)
   return match ? match.mark : 'No Mark'
+}
+
+const getAthleteName = (id) => {
+  const a = athletes.value.find(ath => ath.id === id)
+  return a ? `${a.firstName} ${a.lastName}` : 'Unknown'
 }
 
 const formatDateShort = (dateStr) => {
