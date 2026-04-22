@@ -1,41 +1,44 @@
 <template>
   <div class="max-w-6xl mx-auto space-y-6">
-    <div class="text-center md:text-left">
-      <h2 class="text-2xl font-black uppercase tracking-tight text-gray-900 dark:text-white">
-        Athlete <span class="text-chantilly">Roster</span>
-      </h2>
-      <p class="text-xs text-gray-500 uppercase tracking-widest font-bold mt-1">Data Management & Team Structure</p>
-    </div>
+    <div class="text-center md:text-left flex flex-col md:flex-row justify-between items-end gap-4">
+      <div>
+        <h2 class="text-2xl font-black uppercase tracking-tight text-gray-900 dark:text-white">
+          Athlete <span class="text-chantilly">Roster</span>
+        </h2>
+        <p class="text-xs text-gray-500 uppercase tracking-widest font-bold mt-1">Data Management & Team Structure</p>
+      </div>
 
-    <div class="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800">
-      <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-        <div class="flex items-center gap-3">
-          <input type="file" ref="fileInput" class="hidden" accept=".csv" @change="processCSV" />
-          <button @click="$refs.fileInput.click()" class="btn-secondary">Import CSV</button>
-          <button @click="exportRoster" class="btn-secondary">Full Export</button>
-        </div>
-
-        <div class="flex-1 max-w-sm w-full">
-          <input v-model="searchQuery" type="text" placeholder="Search by name..." 
-                 class="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-xs focus:ring-2 focus:ring-chantilly outline-none" />
-        </div>
-
+      <div class="flex items-center gap-3">
+        <input type="file" ref="fileInput" class="hidden" accept=".csv" @change="processCSV" />
+        <button @click="$refs.fileInput.click()" class="btn-secondary">Import CSV</button>
+        <button @click="exportRoster" class="btn-secondary text-chantilly border-chantilly/30">Export Current View</button>
+        
         <button @click="showArchived = !showArchived" 
                 class="text-[10px] uppercase tracking-widest font-black px-4 py-2.5 rounded-xl border transition"
                 :class="showArchived ? 'bg-red-500 text-white border-red-500' : 'text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5'">
           {{ showArchived ? 'Showing All' : 'Active Only' }}
         </button>
       </div>
+    </div>
 
-      <div class="flex flex-wrap items-center gap-6 mt-6 pt-6 border-t border-gray-100 dark:border-gray-800">
-        <div class="flex bg-gray-100 dark:bg-black/20 p-1 rounded-xl">
+    <div class="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+        
+        <div class="flex bg-gray-100 dark:bg-black/20 p-1 rounded-xl w-full md:w-auto">
           <button v-for="g in ['All', 'Sprints', 'Distance', 'Throwers', 'Unassigned']" :key="g"
                   @click="activeGroupFilter = g"
                   :class="activeGroupFilter === g ? 'bg-white dark:bg-gray-800 text-chantilly shadow-sm' : 'text-gray-400'"
-                  class="px-5 py-2 rounded-lg text-[10px] font-black uppercase transition-all">
+                  class="flex-1 md:flex-none px-5 py-2 rounded-lg text-[10px] font-black uppercase transition-all">
             {{ g }}
           </button>
         </div>
+
+        <div class="w-full md:w-80 relative">
+          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs">🔍</span>
+          <input v-model="searchQuery" type="text" placeholder="Search by name..." 
+                 class="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-gray-700 rounded-xl px-10 py-2.5 text-xs focus:ring-2 focus:ring-chantilly outline-none text-gray-900 dark:text-white" />
+        </div>
+
       </div>
     </div>
 
@@ -140,14 +143,12 @@ const sortedAthletes = computed(() => {
     if (valA < valB) return -1 * modifier;
     if (valA > valB) return 1 * modifier;
 
-    // Tie-breaker: Last Name
     if (sortKey.value !== 'lastName') {
       const lastA = a.lastName?.toLowerCase() || '';
       const lastB = b.lastName?.toLowerCase() || '';
       if (lastA < lastB) return -1;
       if (lastA > lastB) return 1;
     }
-    // Tie-breaker: First Name
     if (sortKey.value !== 'firstName') {
       const firstA = a.firstName?.toLowerCase() || '';
       const firstB = b.firstName?.toLowerCase() || '';
@@ -202,7 +203,6 @@ const processCSV = (event) => {
       const cols = row.split(',')
       if (cols.length < 3) continue
       
-      // We assume Group is the 6th column (index 5). Adjust if your CSV order differs.
       const [first, last, grad, gender, dob, csvGroup] = cols.map(c => c.replace(/"/g, '').trim())
       const gYear = parseInt(grad)
       const diff = gYear - seniorYear
@@ -212,7 +212,7 @@ const processCSV = (event) => {
         await addDoc(collection(db, "athletes"), {
           firstName: first, lastName: last, gradYear: gYear, gender, birthday: dob,
           currentGrade: grades[diff] || "Other",
-          group: csvGroup || 'Unassigned', // <--- FIXED: Now defaults to Unassigned
+          group: csvGroup || 'Unassigned',
           seasons: { xc: false, indoor: false, outdoor: false },
           isActive: true, createdAt: new Date()
         })
@@ -225,6 +225,7 @@ const processCSV = (event) => {
 
 const exportRoster = () => {
   const headers = ['First Name', 'Last Name', 'HS Grad Year', 'Gender', 'Birthday', 'Group']
+  // This uses sortedAthletes, which is already filtered by Group and Search Query
   const rows = sortedAthletes.value.map(a => [
     a.firstName, a.lastName, a.gradYear, a.gender, a.birthday || '', a.group
   ])
