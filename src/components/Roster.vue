@@ -10,7 +10,7 @@
 
       <div class="flex items-center gap-4 bg-white dark:bg-gray-900 p-2 px-4 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
         <div class="flex flex-col border-r border-gray-100 dark:border-gray-800 pr-4">
-          <label class="text-[8px] font-black uppercase text-chantilly ml-1">Manual Toggle</label>
+          <label class="text-[8px] font-black uppercase text-gray-400 ml-1">Roster is:</label>
           <button @click="toggleRegistration" 
                   :class="regSettings.isOpen ? 'text-green-500' : 'text-red-500'"
                   class="text-[10px] font-black uppercase transition-colors">
