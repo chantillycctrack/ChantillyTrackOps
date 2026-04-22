@@ -63,7 +63,7 @@
                       class="w-full text-left p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition flex justify-between items-center border-b border-gray-50 dark:border-gray-800/50">
                 <div class="flex flex-col">
                   <span class="text-xs font-bold">{{ athlete.firstName }} {{ athlete.lastName }}</span>
-                  <span class="text-[8px] font-black uppercase opacity-50">{{ athlete.group }}</span>
+                  <span class="text-[8px] font-black uppercase opacity-50">{{ athlete.group }} ({{ athlete.gender?.charAt(0) }})</span>
                 </div>
                 <span class="text-[9px] font-black px-2 py-0.5 bg-chantilly/10 rounded">{{ getAthleteEntryCount(athlete.id) }}</span>
               </button>
@@ -90,7 +90,7 @@
             </div>
           </div>
 
-          <div class="p-4 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-wrap items-center gap-2">
+          <div v-if="viewMode === 'event'" class="p-4 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-wrap items-center gap-2">
             <span class="text-[9px] font-black uppercase text-gray-400 ml-1 mr-1">Filter Group:</span>
             <button v-for="g in ['All', 'Sprints', 'Distance', 'Throwers', 'Unassigned']" :key="g"
                     @click="activeGroupFilter = g"
@@ -133,12 +133,12 @@
           </div>
 
           <div v-else class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-             <div v-for="event in selectedMeet.events" :key="event.name" 
+             <div v-for="event in filteredEventsForAthlete" :key="event.name" 
                   @click="toggleEntry(activeRoster.find(a => a.id === activeSelection), event.name)"
                   :class="isEntered(activeSelection, event.name) ? 'border-chantilly bg-chantilly/5' : 'border-gray-100 dark:border-gray-800'"
                   class="p-4 border-2 rounded-2xl cursor-pointer hover:border-chantilly transition-all group">
                 <div class="flex justify-between items-center">
-                  <span class="text-xs font-bold" :class="isEntered(activeSelection, event.name) ? 'text-chantilly' : 'text-gray-500'">{{ event.name }}</span>
+                  <span class="text-xs font-bold" :class="isEntered(activeSelection, event.name) ? 'text-chantilly' : 'text-gray-500'">{{ cleanEventName(event.name) }}</span>
                   <div v-if="isEntered(activeSelection, event.name)" class="w-2 h-2 rounded-full bg-chantilly shadow-[0_0_8px_rgba(75,46,131,0.5)]"></div>
                 </div>
                 <div class="mt-2 text-[10px] font-mono text-gray-400">
@@ -154,11 +154,6 @@
         </div>
       </div>
     </div>
-
-    <div v-if="upcomingMeets.length === 0" class="bg-white dark:bg-gray-900 p-20 rounded-2xl shadow-xl border-2 border-dashed border-gray-200 dark:border-gray-800 text-center">
-       <p class="text-gray-400 font-black uppercase tracking-widest">No Upcoming Meets Found</p>
-       <p class="text-xs text-gray-500 mt-2">Schedule a future date in the Meet Management tab.</p>
-    </div>
   </div>
 </template>
 
@@ -167,7 +162,6 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { db } from '../firebaseConfig'
 import { collection, onSnapshot, query, orderBy, where, addDoc, deleteDoc, doc } from 'firebase/firestore'
 
-// REFS
 const meets = ref([])
 const athletes = ref([])
 const meetEntries = ref([])
@@ -175,10 +169,9 @@ const selectedMeetId = ref('')
 const viewMode = ref('event') 
 const activeSelection = ref(null)
 const perfToggle = ref('SB') 
-const eventGenderFilter = ref('Women') // Sidebar toggle state
-const activeGroupFilter = ref('All') // Roster filter state
+const eventGenderFilter = ref('Women') 
+const activeGroupFilter = ref('All') 
 
-// COMPUTED
 const upcomingMeets = computed(() => {
   const today = new Date().toISOString().split('T')[0];
   return meets.value
@@ -195,6 +188,21 @@ const filteredEvents = computed(() => {
   return selectedMeet.value.events.filter(e => e.name.startsWith(eventGenderFilter.value))
 })
 
+// Workspace events for "By Athlete" view (Filtered by specific athlete gender)
+const filteredEventsForAthlete = computed(() => {
+  if (!selectedMeet.value || !activeSelection.value || viewMode.value !== 'athlete') return []
+  const athlete = activeRoster.value.find(a => a.id === activeSelection.value)
+  if (!athlete) return []
+  
+  const isFemale = athlete.gender?.toLowerCase().startsWith('f')
+  const genderPrefix = isFemale ? "Women's" : "Men's"
+  const xcPrefix = isFemale ? "Girls" : "Boys"
+
+  return selectedMeet.value.events.filter(e => 
+    e.name.startsWith(genderPrefix) || e.name.startsWith(xcPrefix)
+  )
+})
+
 const filteredRoster = computed(() => {
   if (!activeSelection.value || viewMode.value !== 'event') return []
   
@@ -203,22 +211,16 @@ const filteredRoster = computed(() => {
   const isMenEvent = eventName.startsWith("Men's") || eventName.startsWith("Boys")
 
   return activeRoster.value.filter(a => {
-    // 1. Gender Matching Logic
     const isFemale = a.gender?.toLowerCase().startsWith('f')
     const isMale = a.gender?.toLowerCase().startsWith('m')
     
-    let genderMatch = true
-    if (isWomenEvent) genderMatch = isFemale
-    if (isMenEvent) genderMatch = isMale
-
-    // 2. Group Filter Logic
+    let genderMatch = isWomenEvent ? isFemale : (isMenEvent ? isMale : true)
     const groupMatch = activeGroupFilter.value === 'All' || a.group === activeGroupFilter.value
 
     return genderMatch && groupMatch
   })
 })
 
-// ACTIONS
 onMounted(() => {
   onSnapshot(query(collection(db, "meets"), orderBy("date", "asc")), (snap) => {
     meets.value = snap.docs.map(d => ({ id: d.id, ...d.data() }))
