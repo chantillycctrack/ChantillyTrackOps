@@ -112,7 +112,7 @@ import { ref, onMounted, computed } from 'vue'
 import { db } from '../firebaseConfig'
 import { collection, query, onSnapshot, doc, updateDoc, deleteDoc, addDoc, writeBatch, setDoc } from 'firebase/firestore'
 
-// Registration State
+// Registration State - Set defaults to prevent UI lockup
 const regSettings = ref({ isOpen: true, closingDate: '' })
 
 const athletes = ref([])
@@ -126,10 +126,15 @@ const fileInput = ref(null)
 const gradeSortMap = { 'Freshman': 1, 'Sophomore': 2, 'Junior': 3, 'Senior': 4 }
 
 onMounted(() => {
-  // Sync Registration Settings
+  // Sync Registration Settings - FIXED VERSION
   onSnapshot(doc(db, "settings", "registration"), (snap) => {
-    if (snap.exists()) regSettings.value = snap.docs ? snap.data() : { ...snap.data() }
-  })
+    if (snap.exists()) {
+      regSettings.value = snap.data();
+    } else {
+      // Default fallback if document doesn't exist
+      regSettings.value = { isOpen: true, closingDate: '' };
+    }
+  });
 
   onSnapshot(query(collection(db, "athletes")), (snap) => {
     const fetched = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
@@ -139,17 +144,28 @@ onMounted(() => {
 
 const toggleRegistration = async () => {
   const statusRef = doc(db, "settings", "registration")
-  await setDoc(statusRef, { 
-    ...regSettings.value,
-    isOpen: !regSettings.value.isOpen 
-  }, { merge: true })
+  try {
+    await setDoc(statusRef, { 
+      isOpen: !regSettings.value.isOpen 
+    }, { merge: true })
+  } catch (err) {
+    console.error("Error toggling registration:", err)
+    alert("Permission Denied: Ensure your Firebase Rules are updated.")
+  }
 }
 
 const updateRegSettings = async () => {
-  await setDoc(doc(db, "settings", "registration"), regSettings.value, { merge: true })
+  const statusRef = doc(db, "settings", "registration")
+  try {
+    await setDoc(statusRef, { 
+      closingDate: regSettings.value.closingDate 
+    }, { merge: true })
+  } catch (err) {
+    console.error("Error updating date:", err)
+  }
 }
 
-// ... Computed Filtered/Sorted logic remains the same ...
+// Filtering & Sorting
 const filteredAthletes = computed(() => {
   return athletes.value.filter(a => {
     const statusMatch = showArchived.value || a.isActive;
@@ -176,6 +192,15 @@ const sortedAthletes = computed(() => {
   });
 })
 
+const toggleSort = (key) => {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortKey.value = key;
+    sortOrder.value = 'asc';
+  }
+}
+
 const exportRoster = () => {
   const headers = ['First Name', 'Last Name', 'Gender', 'Graduation Year', 'Group', 'Athlete Email', 'Guardian 1 Email', 'Guardian 2 Email']
   const rows = sortedAthletes.value.map(a => [
@@ -198,4 +223,46 @@ const exportRoster = () => {
 
 const toggleStatus = async (a) => await updateDoc(doc(db, "athletes", a.id), { isActive: !a.isActive })
 const deleteAthlete = async (a) => { if (confirm(`Delete ${a.firstName}?`)) await deleteDoc(doc(db, "athletes", a.id)) }
+
+// CSV Import
+const processCSV = (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = async (e) => {
+    const text = e.target.result
+    const rows = text.split(/\r?\n/).filter(r => r.trim() !== '')
+    const dataRows = rows.slice(1)
+    const now = new Date()
+    const seniorYear = now.getMonth() >= 6 ? now.getFullYear() + 1 : now.getFullYear()
+
+    for (const row of dataRows) {
+      const cols = row.split(',')
+      if (cols.length < 3) continue
+      
+      const [first, last, grad, gender, dob, csvGroup] = cols.map(c => c.replace(/"/g, '').trim())
+      const gYear = parseInt(grad)
+      const diff = gYear - seniorYear
+      const grades = ["Senior", "Junior", "Sophomore", "Freshman"]
+
+      try {
+        await addDoc(collection(db, "athletes"), {
+          firstName: first, lastName: last, gradYear: gYear, gender, birthday: dob,
+          currentGrade: grades[diff] || "Other",
+          group: csvGroup || 'Unassigned',
+          seasons: { xc: false, indoor: false, outdoor: false },
+          isActive: true, createdAt: new Date()
+        })
+      } catch (err) { console.error(err) }
+    }
+    alert('Import Complete.'); event.target.value = ''
+  }
+  reader.readAsText(file)
+}
 </script>
+
+<style scoped>
+.btn-secondary { @apply px-4 py-2.5 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 transition rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400; }
+.action-btn { @apply px-3 py-1.5 text-[9px] font-black uppercase rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-white/10 transition; }
+.action-btn-red { @apply px-3 py-1.5 text-[9px] font-black uppercase rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition; }
+</style>
