@@ -23,23 +23,35 @@
       
       <div class="md:col-span-4 space-y-4">
         <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-          <div class="p-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-black/20 flex justify-between items-center">
-            <h3 class="text-[10px] font-black uppercase text-gray-400 tracking-widest">
-              {{ viewMode === 'event' ? 'Events' : 'Athletes' }}
-            </h3>
-            <div class="flex bg-gray-100 dark:bg-black/40 p-1 rounded-lg scale-90">
-              <button @click="viewMode = 'event'; activeSelection = null" :class="viewMode === 'event' ? 'bg-white dark:bg-gray-800 text-chantilly shadow-sm' : 'text-gray-500'" class="px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all">Event</button>
-              <button @click="viewMode = 'athlete'; activeSelection = null" :class="viewMode === 'athlete' ? 'bg-white dark:bg-gray-800 text-chantilly shadow-sm' : 'text-gray-500'" class="px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all">Athlete</button>
+          
+          <div class="p-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-black/20 space-y-3">
+            <div class="flex justify-between items-center">
+              <h3 class="text-[10px] font-black uppercase text-gray-400 tracking-widest">
+                {{ viewMode === 'event' ? 'Events' : 'Athletes' }}
+              </h3>
+              <div class="flex bg-gray-100 dark:bg-black/40 p-1 rounded-lg scale-90">
+                <button @click="viewMode = 'event'; activeSelection = null" :class="viewMode === 'event' ? 'bg-white dark:bg-gray-800 text-chantilly shadow-sm' : 'text-gray-500'" class="px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all">Event</button>
+                <button @click="viewMode = 'athlete'; activeSelection = null" :class="viewMode === 'athlete' ? 'bg-white dark:bg-gray-800 text-chantilly shadow-sm' : 'text-gray-500'" class="px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all">Athlete</button>
+              </div>
+            </div>
+
+            <div v-if="viewMode === 'event'" class="flex bg-gray-100 dark:bg-black/40 p-1 rounded-xl">
+              <button @click="eventGenderFilter = 'Women'" 
+                      :class="eventGenderFilter === 'Women' ? 'bg-white dark:bg-gray-800 text-chantilly shadow-sm' : 'text-gray-400'" 
+                      class="flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all">Women</button>
+              <button @click="eventGenderFilter = 'Men'" 
+                      :class="eventGenderFilter === 'Men' ? 'bg-white dark:bg-gray-800 text-chantilly shadow-sm' : 'text-gray-400'" 
+                      class="flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all">Men</button>
             </div>
           </div>
 
           <div class="max-h-[600px] overflow-y-auto custom-scrollbar">
             <div v-if="viewMode === 'event'">
-              <button v-for="event in selectedMeet.events" :key="event.name"
+              <button v-for="event in filteredEvents" :key="event.name"
                       @click="activeSelection = event.name"
                       :class="activeSelection === event.name ? 'border-l-4 border-chantilly bg-chantilly/5 text-chantilly' : 'text-gray-500 dark:text-gray-400'"
                       class="w-full text-left p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition flex justify-between items-center border-b border-gray-50 dark:border-gray-800/50">
-                <span class="text-xs font-bold">{{ event.name }}</span>
+                <span class="text-xs font-bold">{{ cleanEventName(event.name) }}</span>
                 <span class="text-[9px] font-black opacity-50">{{ getEntryCount(event.name) }}/{{ event.limit || '∞' }}</span>
               </button>
             </div>
@@ -78,6 +90,16 @@
             </div>
           </div>
 
+          <div class="p-4 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-wrap items-center gap-2">
+            <span class="text-[9px] font-black uppercase text-gray-400 ml-1 mr-1">Filter Group:</span>
+            <button v-for="g in ['All', 'Sprints', 'Distance', 'Throwers', 'Unassigned']" :key="g"
+                    @click="activeGroupFilter = g"
+                    :class="activeGroupFilter === g ? 'bg-chantilly text-white' : 'bg-gray-100 dark:bg-black/40 text-gray-500'"
+                    class="px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all shadow-sm">
+              {{ g }}
+            </button>
+          </div>
+
           <div v-if="viewMode === 'event'" class="p-4">
             <table class="w-full text-left">
               <thead>
@@ -92,7 +114,7 @@
                 <tr v-for="athlete in filteredRoster" :key="athlete.id" class="group hover:bg-gray-50 dark:hover:bg-white/5 transition">
                   <td class="px-4 py-4">
                     <div class="font-bold text-sm text-gray-900 dark:text-white">{{ athlete.firstName }} {{ athlete.lastName }}</div>
-                    <div class="text-[9px] text-gray-400 uppercase font-black">{{ athlete.currentGrade }}</div>
+                    <div class="text-[9px] text-gray-400 uppercase font-black">{{ athlete.gender }} • {{ athlete.currentGrade }}</div>
                   </td>
                   <td class="px-4 py-4 text-[10px] uppercase font-black text-gray-400">{{ athlete.group }}</td>
                   <td class="px-4 py-4 text-center font-mono text-xs text-chantilly font-bold">
@@ -153,6 +175,8 @@ const selectedMeetId = ref('')
 const viewMode = ref('event') 
 const activeSelection = ref(null)
 const perfToggle = ref('SB') 
+const eventGenderFilter = ref('Women') // Sidebar toggle state
+const activeGroupFilter = ref('All') // Roster filter state
 
 // COMPUTED
 const upcomingMeets = computed(() => {
@@ -165,19 +189,32 @@ const upcomingMeets = computed(() => {
 const selectedMeet = computed(() => meets.value.find(m => m.id === selectedMeetId.value))
 const activeRoster = computed(() => athletes.value.filter(a => a.isActive))
 
+// Sidebar filtered events based on gender toggle
+const filteredEvents = computed(() => {
+  if (!selectedMeet.value) return []
+  return selectedMeet.value.events.filter(e => e.name.startsWith(eventGenderFilter.value))
+})
+
 const filteredRoster = computed(() => {
   if (!activeSelection.value || viewMode.value !== 'event') return []
-  const eventName = activeSelection.value.toLowerCase()
   
-  return activeRoster.value.filter(a => {
-    const isFemaleEvent = eventName.includes('girls') || eventName.includes('female')
-    const isMaleEvent = eventName.includes('boys') || eventName.includes('male')
-    const isFemaleAthlete = a.gender?.toLowerCase().startsWith('f')
-    const isMaleAthlete = a.gender?.toLowerCase().startsWith('m')
+  const eventName = activeSelection.value
+  const isWomenEvent = eventName.startsWith("Women's") || eventName.startsWith("Girls")
+  const isMenEvent = eventName.startsWith("Men's") || eventName.startsWith("Boys")
 
-    if (isFemaleEvent) return isFemaleAthlete
-    if (isMaleEvent) return isMaleAthlete
-    return true 
+  return activeRoster.value.filter(a => {
+    // 1. Gender Matching Logic
+    const isFemale = a.gender?.toLowerCase().startsWith('f')
+    const isMale = a.gender?.toLowerCase().startsWith('m')
+    
+    let genderMatch = true
+    if (isWomenEvent) genderMatch = isFemale
+    if (isMenEvent) genderMatch = isMale
+
+    // 2. Group Filter Logic
+    const groupMatch = activeGroupFilter.value === 'All' || a.group === activeGroupFilter.value
+
+    return genderMatch && groupMatch
   })
 })
 
@@ -185,7 +222,6 @@ const filteredRoster = computed(() => {
 onMounted(() => {
   onSnapshot(query(collection(db, "meets"), orderBy("date", "asc")), (snap) => {
     meets.value = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-    // Auto-select the closest upcoming meet
     if (upcomingMeets.value.length > 0 && !selectedMeetId.value) {
       selectedMeetId.value = upcomingMeets.value[0].id
     }
@@ -249,6 +285,10 @@ const formatDateShort = (dateStr) => {
   if (!dateStr) return ''
   const [y, m, d] = dateStr.split('-')
   return `${m}/${d}`
+}
+
+const cleanEventName = (name) => {
+  return name.replace("Women's ", "").replace("Men's ", "").replace("Girls ", "").replace("Boys ", "")
 }
 </script>
 
