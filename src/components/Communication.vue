@@ -33,7 +33,7 @@
           <span class="font-black uppercase tracking-widest text-[10px]">Parents Only</span>
         </button>
 
-        <button @click="copyList('all')" class="comm-btn-purple group">
+        <button @click="copyList('all')" class="comm-btn group">
           <span class="text-2xl mb-2 group-hover:scale-110 transition-transform">📢</span>
           <span class="font-black uppercase tracking-widest text-[10px]">Entire Team + Parents</span>
         </button>
