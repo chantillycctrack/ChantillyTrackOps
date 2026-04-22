@@ -65,7 +65,7 @@
             <Roster v-if="activeTab === 'roster'" />
             <Communication v-if="activeTab === 'comm'" />
             <MeetManager v-if="activeTab === 'meets'" />
-            <MeetEntries v-if="activeTab === 'Entries'" />
+            <MeetEntries v-if="activeTab === 'entries'" />
             <StaffManager v-if="activeTab === 'staff'" />
           </template>
 
