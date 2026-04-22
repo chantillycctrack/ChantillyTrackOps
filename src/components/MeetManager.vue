@@ -40,7 +40,7 @@
         </div>
       </div>
       <button @click="createMeet" :disabled="!newMeet.season || !newMeet.name || !newMeet.date" class="btn-purple-comm py-4">
-        Add New Meet (Auto-Generate Men's & Women's)
+        Add Meet
       </button>
     </div>
 
