@@ -40,7 +40,7 @@
         </div>
       </div>
       <button @click="createMeet" :disabled="!newMeet.season || !newMeet.name || !newMeet.date" class="btn-purple-comm py-4">
-        Add New Meet
+        Add New Meet (Auto-Generate Men's & Women's)
       </button>
     </div>
 
@@ -158,9 +158,9 @@ const getAutoSeason = () => {
 const newMeet = ref({ name: '', date: '', season: getAutoSeason(), location: '', milestatUrl: '' })
 
 const defaultEvents = {
-  'Fall (XC)': ['JV Girls 5k', 'JV Boys 5k', 'Varsity Girls 5k', 'Varsity Boys 5k'],
+  'Fall (XC)': ['5k'],
   'Winter (Indoor)': ['55m Dash', '300m Dash', '500m Dash', '1000m Run', '1600m Run', '3200m Run', '55m Hurdles', '4x200m Relay', '4x400m Relay', '4x800m Relay', 'High Jump', 'Long Jump', 'Triple Jump', 'Shot Put', 'Pole Vault'],
-  'Spring (Outdoor)': ['100m Dash', '200m Dash', '400m Dash', '800m Run', '1600m Run', '3200m Run', '110m Hurdles', '300m Hurdles', '4x100m Relay', '4x400m Relay', '4x800m Relay', 'High Jump', 'Long Jump', 'Triple Jump', 'Shot Put', 'Discus', 'Pole Vault']
+  'Spring (Outdoor)': ['100m Dash', '200m Dash', '400m Dash', '800m Run', '1600m Run', '3200m Run', 'Hurdles', '300m Hurdles', '4x100m Relay', '4x400m Relay', '4x800m Relay', 'High Jump', 'Long Jump', 'Triple Jump', 'Shot Put', 'Discus', 'Pole Vault']
 }
 
 onMounted(() => {
@@ -180,11 +180,29 @@ const bulkSetLimits = (val) => {
 }
 
 const createMeet = async () => {
-  const events = defaultEvents[newMeet.value.season].map(name => ({
-    name: name,
-    limit: null
-  }))
-  await addDoc(collection(db, "meets"), { ...newMeet.value, events, createdAt: new Date() })
+  const season = newMeet.value.season
+  const baseEvents = defaultEvents[season]
+  let generatedEvents = []
+
+  baseEvents.forEach(eventName => {
+    // Logic for Hurdles in Spring (Outdoor)
+    if (season === 'Spring (Outdoor)' && eventName === 'Hurdles') {
+      generatedEvents.push({ name: "Men's 110m Hurdles", limit: null })
+      generatedEvents.push({ name: "Women's 100m Hurdles", limit: null })
+    } 
+    // Logic for XC Labels
+    else if (season === 'Fall (XC)') {
+      generatedEvents.push({ name: `Girls ${eventName}`, limit: null })
+      generatedEvents.push({ name: `Boys ${eventName}`, limit: null })
+    }
+    // Standard Men's/Women's doubling
+    else {
+      generatedEvents.push({ name: `Men's ${eventName}`, limit: null })
+      generatedEvents.push({ name: `Women's ${eventName}`, limit: null })
+    }
+  })
+
+  await addDoc(collection(db, "meets"), { ...newMeet.value, events: generatedEvents, createdAt: new Date() })
   newMeet.value = { name: '', date: '', season: getAutoSeason(), location: '', milestatUrl: '' }
 }
 
