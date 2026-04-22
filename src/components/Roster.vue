@@ -82,7 +82,7 @@
               </td>
               
               <td class="p-5 text-[10px] leading-tight space-y-1">
-                <div class="flex flex-col"><span class="text-gray-400 font-black uppercase text-[8px]">Ath:</span> {{ athlete.email || '-' }}</div>
+                <div class="flex flex-col"><span class="text-gray-400 font-black uppercase text-[8px]">Athlete:</span> {{ athlete.email || '-' }}</div>
                 <div v-if="athlete.parentEmail1" class="flex flex-col"><span class="text-gray-400 font-black uppercase text-[8px]">G1:</span> {{ athlete.parentEmail1 }}</div>
                 <div v-if="athlete.parentEmail2" class="flex flex-col"><span class="text-gray-400 font-black uppercase text-[8px]">G2:</span> {{ athlete.parentEmail2 }}</div>
               </td>
