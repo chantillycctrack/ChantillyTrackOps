@@ -29,7 +29,7 @@
             </h3>
             <div class="flex bg-gray-100 dark:bg-black/40 p-1 rounded-lg scale-90">
               <button @click="viewMode = 'event'; activeSelection = null" :class="viewMode === 'event' ? 'bg-white dark:bg-gray-800 text-chantilly shadow-sm' : 'text-gray-500'" class="px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all">Event</button>
-              <button @click="viewMode = 'athlete'; activeSelection = null" :class="viewMode === 'athlete' ? 'bg-white dark:bg-gray-800 text-chantilly shadow-sm' : 'text-gray-500'" class="px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all">Ath</button>
+              <button @click="viewMode = 'athlete'; activeSelection = null" :class="viewMode === 'athlete' ? 'bg-white dark:bg-gray-800 text-chantilly shadow-sm' : 'text-gray-500'" class="px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all">Athlete</button>
             </div>
           </div>
 
